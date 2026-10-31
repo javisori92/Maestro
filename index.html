@@ -55,6 +55,12 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
             border-color: #3b82f6;
         }
+
+        input[type="date"], input[type="time"] {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -66,8 +72,8 @@
         <!-- Top Navbar -->
         <header class="bg-white shadow-sm z-10 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0">
             <div class="flex items-center">
-                <i class="fas fa-music text-blue-600 text-xl mr-2"></i>
-                <h1 class="text-xl font-bold text-gray-900">Maestro</h1>
+                <i class="fas fa-music text-blue-600 text-2xl mr-2"></i>
+                <h1 class="text-2xl font-bold text-gray-900">Maestro</h1>
             </div>
             <div class="flex items-center space-x-4">
                 <button type="button" id="course-badge" onclick="showCourseScreen()" class="text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded"><i class="fas fa-layer-group mr-1"></i>Elegir curso</button>
@@ -105,9 +111,15 @@
                             </button>
                         </li>
                         <li>
+                            <button onclick="navigate('courseConfig')" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium hover:bg-gray-700 text-left transition-colors">
+                                <i class="fas fa-graduation-cap w-6 text-center text-lg"></i>
+                                <span class="ml-3 inline-block">Configurar Curso</span>
+                            </button>
+                        </li>
+                        <li>
                             <button onclick="navigate('settings')" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium hover:bg-gray-700 text-left transition-colors">
                                 <i class="fas fa-cog w-6 text-center text-lg"></i>
-                                <span class="ml-3 inline-block">Configuración</span>
+                                <span class="ml-3 inline-block">Ajustes</span>
                             </button>
                         </li>
                     </ul>
@@ -229,7 +241,7 @@
                 </section>
 
                 <!-- VIEW: SETTINGS -->
-                <section id="view-settings" class="app-view hidden">
+                <section id="view-courseConfig" class="app-view hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-gray-800">Configuración del Curso</h2>
                     </div>
@@ -310,7 +322,15 @@
                             </div>
                         </form>
                     </div>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8 max-w-4xl">
+                    
+                </section>
+
+                <!-- VIEW: SETTINGS -->
+                <section id="view-settings" class="app-view hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Gestionar Datos</h2>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8 max-w-4xl">
                         <h3 class="text-lg font-bold text-gray-800 mb-1">Copia de seguridad</h3>
                         <p class="text-sm text-gray-500 mb-4">Los datos se guardan solo en este navegador. Descarga una copia con regularidad para no perderlos.</p>
                         <div class="flex flex-wrap gap-3">
@@ -362,8 +382,8 @@
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
-                                            <th class="px-4 py-3 w-20"></th>
-</tr>
+                                                <th class="px-4 py-3 w-20"></th>
+                                            </tr>
                                         </thead>
                                         <tbody id="attendance-list" class="bg-white divide-y divide-gray-200"></tbody>
                                     </table>
@@ -497,7 +517,7 @@
     <div id="modal-evaluation" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-800">Añadir Trabajo Semanal / Clase</h3>
+                <h3 class="text-lg font-bold text-gray-800">Registrar Trabajo Semanal / Clase</h3>
                 <button onclick="closeModal('modal-evaluation')" class="text-gray-600 hover:text-gray-900"><i class="fas fa-times"></i></button>
             </div>
             <form id="form-evaluation" class="space-y-3">
@@ -545,6 +565,18 @@
                         <textarea id="ev-work" rows="2" class="mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Ej: Flexibilidad de muñecas, digitación..."></textarea>
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 flex justify-between">
+                            <span>Rendimiento (<span id="ev-perf-val">50</span>%)</span>
+                            <span class="text-blue-600 font-bold">Nota: <span id="ev-perf-grade">5.0</span></span>
+                        </label>
+                        <input type="range" id="ev-performance" min="0" max="100" value="50" oninput="updatePerfValue()" class="mt-2 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Observaciones</label>
+                        <textarea id="ev-obs" rows="2" class="mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Comentarios adicionales..."></textarea>
+                    </div>
+                    <hr style="border: 2px solid rgb(0, 68, 255); border-radius: 25px">
+                    <div>
                         <label class="block text-sm font-medium text-gray-700">Para el próximo día...</label>
                         <textarea id="ev-next" rows="2" class="mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Ej: Estudiar manos separadas tempo 80..."></textarea>
                         <div class="mt-2 border border-gray-200 rounded bg-gray-50 p-2 space-y-2">
@@ -560,22 +592,11 @@
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 flex justify-between">
-                            <span>Rendimiento (<span id="ev-perf-val">50</span>%)</span>
-                            <span class="text-blue-600 font-bold">Nota: <span id="ev-perf-grade">5.0</span></span>
-                        </label>
-                        <input type="range" id="ev-performance" min="0" max="100" value="50" oninput="updatePerfValue()" class="mt-2 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Observaciones</label>
-                        <textarea id="ev-obs" rows="2" class="mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Comentarios adicionales..."></textarea>
-                    </div>
                 </div>
 
                 <div class="pt-4 flex justify-end space-x-2">
                     <button type="button" onclick="closeModal('modal-evaluation')" class="px-4 py-2 bg-gray-200 rounded text-sm">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium">Guardar Actividad</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium">Guardar Registro</button>
                 </div>
             </form>
         </div>
@@ -1175,7 +1196,12 @@
             const card = (c, cur) => `<div class="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                 <div><div class="font-bold text-gray-800">${esc(c.name)}</div>
                 <div class="text-xs text-gray-500">${fmtD(c.settings.courseStart)} – ${fmtD(c.settings.courseEnd)} · ${c.students.length} alumnos</div></div>
-                <button type="button" onclick="openCourse('${c.id}', ${!cur})" class="${cur ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'} px-4 py-2 rounded text-sm font-medium">${cur ? 'Abrir curso' : 'Consultar'}</button></div>`;
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button type="button" onclick="openCourse('${c.id}', ${!cur})" class="${cur ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'} px-4 py-2 rounded text-sm font-medium">${cur ? 'Abrir curso' : 'Consultar'}</button>
+                    <button type="button" onclick="renameCourse('${c.id}')" class="text-gray-400 hover:text-blue-600 p-2 rounded hover:bg-blue-50 transition" title="Renombrar curso"><i class="fas fa-edit"></i></button>
+                    <button type="button" onclick="deleteCourse('${c.id}')" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="Borrar curso"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>`;
             document.getElementById('course-current').innerHTML = sorted.length ? card(sorted[0], true) : '<p class="text-sm text-gray-500">Aún no hay ningún curso. Crea el primero.</p>';
             document.getElementById('course-previous').innerHTML = sorted.slice(1).map(c => card(c, false)).join('') || '<p class="text-sm text-gray-500">No hay cursos anteriores.</p>';
             document.getElementById('course-close').classList.toggle('hidden', !appState.currentCourseId);
@@ -1254,6 +1280,78 @@
                 <label class="block text-sm font-medium text-gray-700">Nombre<input type="text" id="nc-name" class="mt-1 block w-full border rounded px-3 py-2 text-sm"></label>
                 <div class="grid grid-cols-2 gap-2"><label class="text-xs text-gray-600">Inicio del curso<input type="date" id="nc-start" class="mt-1 block w-full border rounded px-2 py-1 text-sm"></label><label class="text-xs text-gray-600">Fin del curso<input type="date" id="nc-end" class="mt-1 block w-full border rounded px-2 py-1 text-sm"></label></div>${tri}
                 <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="showCourseScreen()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button><button type="button" onclick="createNewCourse()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-medium">Crear curso</button></div></div></div></div>`);
+        }
+
+        function renameCourse(courseId) {
+            const course = store.courses.find(c => c.id === courseId);
+            if (!course) return;
+
+            // Pedir el nuevo nombre mediante un prompt prellenado con el nombre actual
+            const newName = prompt("Introduce el nuevo nombre para el curso:", course.name);
+    
+            // Si el usuario cancela o deja el campo vacío, no hacemos nada
+            if (newName === null) return;
+            const trimmedName = newName.trim();
+    
+            if (!trimmedName) {
+                showToast('El nombre del curso no puede estar vacío.', 'warning');
+                return;
+            }
+
+            // Comprobar que no exista ya otro curso con el mismo nombre
+            if (store.courses.some(c => c.id !== courseId && c.name.toLowerCase() === trimmedName.toLowerCase())) {
+                showToast('Ya existe otro curso con ese mismo nombre.', 'warning');
+                return;
+            }
+
+            // Actualizar el nombre
+            course.name = trimmedName;
+
+            // Guardar cambios y refrescar la pantalla de cursos
+            saveUserData();
+            showCourseScreen();
+
+            // Si el usuario tiene abierto actualmente este curso, actualizamos también el badge superior si procede
+            if (appState.currentCourseId === courseId) {
+                document.getElementById('course-badge').innerHTML = `<i class="fas fa-layer-group mr-1"></i>${esc(trimmedName)}${appState.readOnly ? ' · consulta' : ''}`;
+            }
+
+            showToast('Curso renombrado correctamente', 'success');
+        }
+
+        function deleteCourse(courseId) {
+            const courseToDelete = store.courses.find(c => c.id === courseId);
+            if(!courseToDelete) return;
+
+            // Advertencia de seguridad para evitar borrados accidentales
+            if(!confirm(`¿Estás seguro de que deseas eliminar el curso "${courseToDelete.name}"? Se borrarán todos sus datos asociados permanentemente.`)){
+                return;
+            }
+
+            //Evitar dejar el sistema completamente sin cursos si es el único
+            if (store.courses.length <= 1) {
+                if (!confirm("Este es el único curso que queda en el sistema. Si lo borras, la aplicación se quedará sin cursos activos. ¿Deseas continuar de todas formas?")){
+                    return;
+                }
+            }
+
+            // Filtrar el curso del array
+            store.courses = store.courses.filter(c => c.id !== courseId);
+
+            // Si el usuario estaba dentro del curso borrado, reiniciamos el estado activo 
+            if (appState.currentCourseId === courseId){
+                appState.currentCourseId = null;
+                appState.readOnly = false;
+                document.body.classList.remove('ro');
+                document.getElementById('ro-banner').classList.add('hidden');
+            }
+
+            // Guardar cambios en localStorage
+            saveUserData();
+
+            //Actualizar la pantalla de selección de cursos
+            showCourseScreen();
+            showToast('Curso eliminado correctamente', 'info');
         }
 
         function applyReadOnlyGuards() {
@@ -1516,6 +1614,7 @@
                 'schedule': 'view-schedule',
                 'students': 'view-students',
                 'repertoire': 'view-repertoire',
+                'courseConfig': 'view-courseConfig',
                 'settings': 'view-settings',
                 'student-detail': 'view-student-detail'
             };
@@ -1524,7 +1623,7 @@
             if(targetId) document.getElementById(targetId).classList.remove('hidden');
             
             if(viewName !== 'student-detail') {
-               const indexMap = { 'home': 0, 'schedule': 1, 'students': 2, 'repertoire': 3, 'settings': 4 };
+               const indexMap = { 'home': 0, 'schedule': 1, 'students': 2, 'repertoire': 3, 'courseConfig': 4, 'settings': 5 };
                const navBtns = document.querySelectorAll('.nav-btn');
                if(navBtns[indexMap[viewName]]) navBtns[indexMap[viewName]].classList.add('bg-gray-700', 'border-l-4', 'border-blue-500');
             }
@@ -1533,6 +1632,7 @@
             if (viewName === 'schedule') renderSchedule();
             if (viewName === 'students') renderStudents();
             if (viewName === 'repertoire') renderRepertoire();
+            if (viewName === 'courseConfig') renderCourseConfig();
             if (viewName === 'settings') renderSettings();
         }
 
@@ -1590,9 +1690,8 @@
                                 <div>
                                     <h4 class="text-xl font-extrabold text-gray-800 tracking-tight">${esc(getFullName(student))}</h4>
                                     <div class="flex flex-wrap items-center gap-2 mt-1.5 text-sm text-gray-600 font-medium">
-                                        <span class="bg-gray-100 px-2 py-1 rounded"><i class="fas fa-guitar text-blue-500 mr-1.5"></i>${esc(student.subject)}</span>
+                                        <span class="bg-gray-100 px-2 py-1 rounded"><i class="fas fa-play text-blue-500 mr-1.5"></i>${esc(student.subject)}</span>
                                         <span class="bg-gray-100 px-2 py-1 rounded">${esc(student.course || 'Sin curso')}</span>
-                                        <span class="bg-gray-100 px-2 py-1 rounded">${student.age ? student.age + ' años' : ''}</span>
                                     </div>
                                 </div>
                                 <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-900 max-w-lg">
@@ -2982,6 +3081,10 @@
             document.getElementById('set-t3-start').value = appState.settings.trimester3Start || '';
             document.getElementById('set-t3-end').value = appState.settings.trimester3End || '';
             renderHolidays();
+        }
+
+        function renderCourseConfig(){
+
         }
 
         document.getElementById('form-settings').addEventListener('change', (e) => {
