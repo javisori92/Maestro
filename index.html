@@ -529,7 +529,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Obra o Libro del Repertorio (Opcional)</label>
                     <select id="ev-rep-select" onchange="toggleEvalRepFields()" class="mt-1 block w-full border rounded px-3 py-2 text-sm bg-blue-50">
-                        <option value="">-- Seleccionar obra o método --</option>
+                        <option value="">— Seleccionar obra / libro —</option>
                     </select>
                 </div>
 
@@ -577,8 +577,6 @@
                     </div>
                     <hr style="border: 2px solid rgb(0, 68, 255); border-radius: 25px">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Para el próximo día...</label>
-                        <textarea id="ev-next" rows="2" class="mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Ej: Estudiar manos separadas tempo 80..."></textarea>
                         <div class="mt-2 border border-gray-200 rounded bg-gray-50 p-2 space-y-2">
                             <label class="block text-xs font-bold text-gray-700 uppercase">Elegir contenido para el próximo día (opcional)</label>
                             <select id="ev-next-rep" onchange="buildNextPicker()" class="block w-full border rounded px-2 py-1 text-sm bg-white"></select>
@@ -591,6 +589,8 @@
                                 <span class="text-[10px] text-gray-500 block">Al marcar una lección se añaden sus páginas; también puedes escribirlas.</span>
                             </div>
                         </div>
+                        <label class="block text-sm font-medium text-gray-700">Para el próximo día...</label>
+                        <textarea id="ev-next" rows="2" class="mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Ej: Estudiar manos separadas tempo 80..."></textarea>
                     </div>
                 </div>
 
@@ -1427,7 +1427,7 @@
 
         function fillNextRepOptions() {
             const sel = document.getElementById('ev-next-rep');
-            sel.innerHTML = '<option value="">— Elegir obra / libro (opcional) —</option>' + appState.repertoire.map(r => `<option value="${esc(r.id)}">[${r.type === 'libro' ? 'Libro' : 'Obra'}] ${esc(r.title)} - ${esc(r.author)}</option>`).join('');
+            sel.innerHTML = '<option value="">— Seleccionar obra / libro —</option>' + appState.repertoire.map(r => `<option value="${esc(r.id)}">[${r.type === 'libro' ? 'Libro' : 'Obra'}] ${esc(r.title)} - ${esc(r.author)}</option>`).join('');
             buildNextPicker();
         }
         function buildNextPicker() {
@@ -2441,7 +2441,7 @@
             document.getElementById('form-evaluation').reset(); document.getElementById('ev-id').value = ''; document.getElementById('ev-pages-worked').dataset.book = ''; fillNextRepOptions(); 
             const select = document.getElementById('ev-rep-select');
             if(select) {
-                select.innerHTML = '<option value="">-- Seleccionar obra o método --</option>';
+                select.innerHTML = '<option value="">— Seleccionar obra / libro —</option>';
                 const student = appState.students.find(s => s.id === appState.currentViewStudentId);
                 const completedRepIds = student && student.completedRepertoire ? student.completedRepertoire.map(cr => cr.repId) : [];
 
@@ -2924,13 +2924,13 @@
             } else {
                 student.completedRepertoire.forEach(r => {
                     repList.innerHTML += `
-                        <li class="px-4 py-3 flex justify-between items-start hover:bg-gray-50 text-sm">
-                            <div>
-                                <div class="text-xs text-gray-500">Finalizado: ${fmtD(r.completionDate)}</div>
-                                <div class="font-medium text-gray-900">${esc(r.title)}</div>
-                                <div class="text-xs text-gray-500">${esc(r.author)}</div>
+                        <li class="px-4 py-3 flex justify-between items-center hover:bg-gray-50 text-sm gap-2">
+                            <div class="truncate min-w-0">
+                                <span class="text-gray-600 font-mono text-xs mr-2">${fmtD(r.completionDate)}</span>
+                                <span class="font-medium text-gray-900">${esc(r.title)}</span>
+                                <span class="text-gray-500 text-xs ml-1">de ${esc(r.author)}</span>
                             </div>
-                            <div class="flex items-start shrink-0">
+                            <div class="flex items-center shrink-0 space-x-1">
                                 <button type="button" onclick="editCompletedRep('${r.id}')" class="text-gray-400 hover:text-blue-600 p-1" title="Editar"><i class="fas fa-edit"></i></button>
                                 <button type="button" onclick="deleteCompletedRep('${r.id}')" class="text-gray-400 hover:text-red-600 p-1" title="Eliminar"><i class="fas fa-trash"></i></button>
                             </div>
