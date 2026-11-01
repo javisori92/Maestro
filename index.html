@@ -2856,7 +2856,7 @@
                     let repHtml = '';
                     if(ev.repWork) {
                         if(ev.repWork.type === 'libro') {
-                            repHtml = `<div class="bg-green-50 border border-green-200 p-1.5 rounded text-xs text-green-900 mb-1"><b>Libro:</b> ${esc(ev.repWork.title)} (${esc(ev.repWork.author)})${(ev.repWork.lessons && ev.repWork.lessons.length) ? ' · ' + esc(ev.repWork.lessons.join(', ')) : ''} - <span class="font-semibold">${esc(ev.repWork.pages || 'Sin páginas')}</span></div>`;
+                            repHtml = `<div class="bg-green-50 border border-green-200 p-1.5 rounded text-xs text-green-900 mb-1"><b>Libro:</b> ${esc(ev.repWork.title)} (${esc(ev.repWork.author)})${(ev.repWork.lessons && ev.repWork.lessons.length) ? ' · ' + esc(ev.repWork.lessons.join(', ')) : ''} - <span>Páginas ${esc(ev.repWork.pages || 'Sin páginas')}</span></div>`;
                         } else {
                             repHtml = `<div class="bg-indigo-50 border border-indigo-200 p-1.5 rounded text-xs text-indigo-900 mb-1"><b>Obra:</b> ${esc(ev.repWork.title)} (${esc(ev.repWork.author)}) - <span class="font-semibold">${ev.repWork.complete ? 'Completa' : esc(ev.repWork.sections)}</span></div>`;
                         }
@@ -2868,10 +2868,11 @@
                                 <span class="font-bold text-gray-700">${fmtD(ev.date)}</span>
                                 <span class="flex items-center gap-2"><span class="text-blue-600 font-semibold">Nota: ${ev.performance ? (ev.performance / 10).toFixed(1) : '-'}</span><button type="button" onclick="editEvaluation('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-1" title="Editar"><i class="fas fa-edit"></i></button><button type="button" onclick="deleteEvaluation('${ev.id}')" class="text-gray-400 hover:text-red-600 p-1" title="Eliminar"><i class="fas fa-trash"></i></button></span>
                             </div>
+                            <p><b class="text-xs text-gray-900 space-y-1">Trabajo realizado:</b></p>
                             ${repHtml}
                             <div class="text-xs text-gray-700 space-y-1">
-                                <p><b class="text-gray-900">Trabajo:</b> ${esc(ev.work || '-')}</p>
-                                <p><b class="text-gray-900">Próximo día:</b> ${esc(nextText(ev) || '-')}</p>
+                                ${ev.work && ev.work.trim() ? `<p>${esc(ev.work)}</p>` : ''}
+                                ${nextText(ev) ? `<p><b class="text-gray-900">Para el próximo día:</b> ${esc(nextText(ev))}</p>` : ''}
                                 ${ev.observations ? `<p><b class="text-gray-900">Obs:</b> ${esc(ev.observations)}</p>` : ''}
                             </div>
                         </div>
