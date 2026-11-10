@@ -678,6 +678,10 @@
         .align-middle{vertical-align:middle}
         .text-lime-800{--tw-text-opacity:1;color:rgb(63 98 18/var(--tw-text-opacity,1))}
         .text-red-800{--tw-text-opacity:1;color:rgb(153 27 27/var(--tw-text-opacity,1))}
+        .hover\:underline:hover{text-decoration-line:underline}
+        @media (min-width:768px){.md\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}}
+        
+        @media (min-width:640px){.sm\:whitespace-nowrap{white-space:nowrap}}
     </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -920,8 +924,57 @@
                         </button>
                     </div>
                     
-                    <div class="mb-4">
-                        <input type="text" id="search-student" placeholder="Buscar por nombre, asignatura..." class="w-full md:w-1/2 px-4 py-2 border rounded shadow-sm focus:ring-blue-500 focus:border-blue-500" onkeyup="renderStudents()">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-4 space-y-3">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="search-student" placeholder="Buscar alumno" class="flex-1 min-w-0 px-4 py-2 border rounded focus:ring-blue-500 focus:border-blue-500" oninput="renderStudents()">
+                            <button type="button" id="student-options-toggle" onclick="toggleStudentOptions()" aria-expanded="false" aria-controls="student-options" class="border rounded px-4 py-2 text-sm bg-white hover:bg-gray-50 text-gray-700 font-medium sm:whitespace-nowrap">
+                                <i class="fas fa-sliders-h mr-2 text-gray-500"></i>Mostrar u ocultar filtros y ordenación<span id="student-options-badge" class="hidden ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full align-middle">activos</span>
+                            </button>
+                        </div>
+                        <div id="student-options" class="hidden space-y-3">
+                        <div class="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-gray-500 uppercase" for="student-sort">Ordenar</label>
+                                <div class="mt-1 flex gap-2">
+                                    <select id="student-sort" onchange="renderStudents()" class="flex-1 min-w-0 border rounded px-2 py-2 text-sm bg-white">
+                                        <option value="nombre">Por Nombre</option>
+                                        <option value="curso">Por Curso</option>
+                                        <option value="instrumento">Por Instrumento</option>
+                                        <option value="edad">Por Edad</option>
+                                    </select>
+                                    <button type="button" id="student-sort-dir" onclick="toggleStudentSortDir()" class="border rounded px-3 py-2 text-sm bg-white hover:bg-gray-50 whitespace-nowrap">↑ Ascendente</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase" for="filter-course">Filtrar por curso</label>
+                                <select id="filter-course" onchange="renderStudents()" class="mt-1 block w-full border rounded px-2 py-2 text-sm bg-white">
+                                    <option value="">Todos</option>
+                                    <option value="1º Iniciación">1º Iniciación</option>
+                                    <option value="2º Iniciación">2º Iniciación</option>
+                                    <option value="1º Básico">1º Básico</option>
+                                    <option value="2º Básico">2º Básico</option>
+                                    <option value="1º Avanzado">1º Avanzado</option>
+                                    <option value="Solo">Solo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase" for="filter-subject">Filtrar por instrumento</label>
+                                <select id="filter-subject" onchange="renderStudents()" class="mt-1 block w-full border rounded px-2 py-2 text-sm bg-white"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase" for="filter-age-min">Edad desde</label>
+                                <input type="number" min="0" id="filter-age-min" oninput="renderStudents()" class="mt-1 block w-full border rounded px-2 py-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase" for="filter-age-max">Edad hasta</label>
+                                <input type="number" min="0" id="filter-age-max" oninput="renderStudents()" class="mt-1 block w-full border rounded px-2 py-2 text-sm">
+                            </div>
+                        </div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-gray-500">
+                            <span id="students-count"></span>
+                            <button type="button" id="student-filters-clear" onclick="clearStudentFilters()" class="hidden text-blue-600 hover:underline font-medium">Limpiar filtros</button>
+                        </div>
                     </div>
 
                     <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -2072,7 +2125,7 @@
             if (!c) return;
             if (!appState.readOnly) packStore();
             const src = ro ? clone(c) : c;
-            appState.currentCourseId = id; appState.readOnly = ro; appState.weeklyTrimesterFor = null;
+            appState.currentCourseId = id; appState.readOnly = ro; appState.weeklyTrimesterFor = null; resetStudentControls();
             appState.students = src.students; appState.schedule = src.schedule; appState.settings = src.settings; appState.dailyValidations = src.dailyValidations;
             appState.repertoire = ro ? clone(store.repertoire) : store.repertoire;
             normalizeData();
@@ -3135,13 +3188,52 @@
 
         function renderStudents() {
             const list = document.getElementById('students-list');
-            const search = document.getElementById('search-student').value.toLowerCase();
+            const get = (id) => document.getElementById(id);
+            const search = get('search-student').value.toLowerCase();
             list.innerHTML = '';
 
+            // instrumentos distintos (sin distinguir mayúsculas ni tildes)
+            const subjects = new Map();
+            appState.students.forEach(s => { const k = normKey(s.subject); if (k && !subjects.has(k)) subjects.set(k, String(s.subject).trim()); });
+            const prevSubject = get('filter-subject').value;
+            get('filter-subject').innerHTML = '<option value="">Todos</option>' + [...subjects].sort((a, b) => a[1].localeCompare(b[1], 'es', { sensitivity: 'base' })).map(([k, v]) => `<option value="${esc(k)}">${esc(v.charAt(0).toUpperCase() + v.slice(1))}</option>`).join('');
+            get('filter-subject').value = subjects.has(prevSubject) ? prevSubject : '';
+
+            const fCourse = get('filter-course').value, fSubject = get('filter-subject').value;
+            const ageMin = parseInt(get('filter-age-min').value), ageMax = parseInt(get('filter-age-max').value);
             const filtered = appState.students.filter(s => {
                 const fullName = getFullName(s).toLowerCase();
-                return fullName.includes(search) || (s.subject || '').toLowerCase().includes(search);
+                if (search && !(fullName.includes(search) || (s.subject || '').toLowerCase().includes(search))) return false;
+                if (fCourse && s.course !== fCourse) return false;
+                if (fSubject && normKey(s.subject) !== fSubject) return false;
+                const age = parseInt(s.age);
+                if (!isNaN(ageMin) && !(age >= ageMin)) return false;
+                if (!isNaN(ageMax) && !(age <= ageMax)) return false;
+                return true;
             });
+
+            // ordenación
+            const sortKey = get('student-sort').value || 'nombre', dir = appState.studentSortDir === 'desc' ? -1 : 1;
+            const cmp = (a, b) => String(a || '').localeCompare(String(b || ''), 'es', { sensitivity: 'base' });
+            const byName = (a, b) => cmp(a.nombre || getFullName(a), b.nombre || getFullName(b)) || cmp(a.apellidos, b.apellidos);
+            const levelIdx = (c) => { const i = LEVELS.indexOf(c); return i < 0 ? 99 : i; };
+            filtered.sort((a, b) => {
+                let r = 0;
+                if (sortKey === 'curso') r = levelIdx(a.course) - levelIdx(b.course);
+                else if (sortKey === 'instrumento') r = cmp(a.subject, b.subject);
+                else if (sortKey === 'edad') {
+                    const x = parseInt(a.age), y = parseInt(b.age), nx = isNaN(x), ny = isNaN(y);
+                    if (nx || ny) return nx && ny ? byName(a, b) : (nx ? 1 : -1);   // sin edad, siempre al final
+                    r = x - y;
+                } else r = byName(a, b);
+                return (r * dir) || byName(a, b);
+            });
+
+            const active = !!(search || fCourse || fSubject || !isNaN(ageMin) || !isNaN(ageMax));
+            get('students-count').textContent = `${filtered.length} de ${appState.students.length} alumnos`;
+            get('student-filters-clear').classList.toggle('hidden', !active);
+            get('student-sort-dir').textContent = dir === 1 ? '↑ Ascendente' : '↓ Descendente';
+            get('student-options-badge').classList.toggle('hidden', !(fCourse || fSubject || !isNaN(ageMin) || !isNaN(ageMax) || sortKey !== 'nombre' || dir === -1));
 
             if(filtered.length === 0) {
                 list.innerHTML = '<li class="p-4 text-center text-gray-500">No se encontraron alumnos.</li>';
@@ -3174,6 +3266,27 @@
                 `;
                 list.appendChild(li);
             });
+        }
+
+        function toggleStudentOptions(force) {
+            const panel = document.getElementById('student-options');
+            const show = force === undefined ? panel.classList.contains('hidden') : force;
+            panel.classList.toggle('hidden', !show);
+            document.getElementById('student-options-toggle').setAttribute('aria-expanded', show ? 'true' : 'false');
+        }
+        function toggleStudentSortDir() {
+            appState.studentSortDir = appState.studentSortDir === 'desc' ? 'asc' : 'desc';
+            renderStudents();
+        }
+        function resetStudentControls() {
+            ['search-student', 'filter-age-min', 'filter-age-max', 'filter-course', 'filter-subject'].forEach(id => { document.getElementById(id).value = ''; });
+            document.getElementById('student-sort').value = 'nombre';
+            appState.studentSortDir = 'asc';
+            toggleStudentOptions(false);
+        }
+        function clearStudentFilters() {
+            ['search-student', 'filter-age-min', 'filter-age-max', 'filter-course', 'filter-subject'].forEach(id => { document.getElementById(id).value = ''; });
+            renderStudents();
         }
 
         function deleteStudent(id) {
@@ -4323,7 +4436,12 @@
             setupExtras();
             applyReadOnlyGuards();
             loadUserData();
-            showCourseScreen();
+            // Si hay un curso cuyas fechas incluyen hoy (inicio y fin incluidos), se entra directamente en él
+            const today = getTodayDate();
+            const current = store.courses
+                .filter(c => c.settings.courseStart && c.settings.courseEnd && today >= c.settings.courseStart && today <= c.settings.courseEnd)
+                .sort((a, b) => b.settings.courseStart.localeCompare(a.settings.courseStart))[0];
+            if (current) openCourse(current.id, false); else showCourseScreen();
             setInterval(updateTimeAndCheckAlerts, 10000);
         }
 
