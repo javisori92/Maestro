@@ -682,6 +682,7 @@
         @media (min-width:768px){.md\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}}
         
         @media (min-width:640px){.sm\:whitespace-nowrap{white-space:nowrap}}
+        .break-words{overflow-wrap:break-word}
     </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -753,6 +754,24 @@
             input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value { text-align: left; min-width: 0; margin: 0; }
             input[type="date"]::-webkit-datetime-edit, input[type="time"]::-webkit-datetime-edit { padding: 0; line-height: 1.25rem; }
             [id^="modal-"] label, [id^="modal-"] .grid > div, #course-screen label { min-width: 0; }
+        }
+
+        /* Vista diaria del horario: móvil en dos filas, pantallas anchas en una */
+        .day-head { display: flex; flex-direction: column; gap: .75rem; }
+        .day-nav { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+        .day-nav button { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .5rem .75rem; }
+        .day-ev { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; }
+        .day-ev .ev-title { grid-column: 1 / -1; grid-row: 1; }
+        .day-ev .ev-time { grid-column: 1; grid-row: 2; justify-self: start; }
+        .day-ev .ev-actions { grid-column: 2; grid-row: 2; }
+        @media (min-width: 640px) {
+            .day-head { flex-direction: row; justify-content: space-between; align-items: center; }
+            .day-nav { display: flex; }
+            .day-nav button { padding: .25rem .75rem; }
+            .day-ev { grid-template-columns: auto 1fr auto; gap: 1rem; }
+            .day-ev .ev-title { grid-column: 2; grid-row: 1; }
+            .day-ev .ev-time { grid-column: 1; grid-row: 1; min-width: 110px; }
+            .day-ev .ev-actions { grid-column: 3; grid-row: 1; }
         }
 
         #nav-backdrop { display: none; }
@@ -898,11 +917,11 @@
                     <!-- Mode Container: Daily View -->
                     <div id="schedule-mode-day" class="schedule-mode-container hidden bg-white rounded-lg shadow p-6" style="height: calc(100vh - 180px); overflow-y: auto;">
                         <div class="max-w-2xl mx-auto">
-                            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                            <div class="day-head mb-6 border-b pb-4">
                                 <h3 id="day-view-title" class="text-xl font-bold text-gray-800 capitalize">Día</h3>
-                                <div class="flex gap-2">
-                                    <button onclick="changeDayOffset(-1)" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded font-medium text-sm"><i class="fas fa-chevron-left"></i> Anterior</button>
-                                    <button onclick="changeDayOffset(1)" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded font-medium text-sm">Siguiente <i class="fas fa-chevron-right"></i></button>
+                                <div class="day-nav">
+                                    <button type="button" onclick="changeDayOffset(-1)" class="bg-gray-100 hover:bg-gray-200 rounded font-medium text-sm"><i class="fas fa-chevron-left"></i> Anterior</button>
+                                    <button type="button" onclick="changeDayOffset(1)" class="bg-gray-100 hover:bg-gray-200 rounded font-medium text-sm">Siguiente <i class="fas fa-chevron-right"></i></button>
                                 </div>
                             </div>
                             <div id="day-view-events" class="space-y-4"></div>
@@ -2986,19 +3005,17 @@
                 }
 
                 container.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
-                        <div class="flex items-center space-x-4">
-                            <div class="bg-blue-600 text-white font-bold px-3 py-2 rounded text-sm text-center min-w-[110px]">
-                                ${ev.startTime} - ${ev.endTime}
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <h4 class="font-bold text-gray-800 text-base">${esc(titleDisplay)}</h4>
-                                    ${badge}
-                                </div>
-                            </div>
+                    <div class="day-ev p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
+                        <div class="ev-title flex flex-wrap items-center gap-2 min-w-0">
+                            <h4 class="font-bold text-gray-800 text-base break-words">${esc(titleDisplay)}</h4>
+                            ${badge}
                         </div>
-                        <button onclick="editSchedule('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-2" title="Editar"><i class="fas fa-edit"></i></button><button onclick="deleteSchedule('${ev.id}')" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
+                        <div class="ev-time bg-blue-600 text-white font-bold px-3 py-2 rounded text-sm text-center whitespace-nowrap">
+                            ${ev.startTime} - ${ev.endTime}
+                        </div>
+                        <div class="ev-actions flex items-center">
+                            <button type="button" onclick="editSchedule('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-2" title="Editar"><i class="fas fa-edit"></i></button><button type="button" onclick="deleteSchedule('${ev.id}')" class="text-red-400 hover:text-red-600 p-2" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
                 `;
             });
