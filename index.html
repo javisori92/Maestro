@@ -823,9 +823,14 @@
         .day-nav { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
         .day-nav button { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .5rem .75rem; }
         .day-ev { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; }
-        .day-ev .ev-title { grid-column: 1 / -1; grid-row: 1; }
-        .day-ev .ev-time { grid-column: 1; grid-row: 2; justify-self: start; }
-        .day-ev .ev-actions { grid-column: 2; grid-row: 2; }
+        .day-ev .ev-title { grid-column: 1 / -1; grid-row: 2; }
+        .day-ev .ev-time { grid-column: 1; grid-row: 1; justify-self: start; }
+        .day-ev .ev-actions { grid-column: 2; grid-row: 1; }
+        /* Lista del horario: hora encima del nombre en pantallas pequeñas. */
+        .schedule-list-entry { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+        .schedule-list-details { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; flex: 1; min-width: 0; }
+        .schedule-list-title { overflow-wrap: anywhere; }
+        .schedule-list-actions { display: flex; align-items: center; flex-shrink: 0; }
         @media (min-width: 640px) {
             .day-head { flex-direction: row; justify-content: space-between; align-items: center; }
             .day-nav { display: flex; }
@@ -834,6 +839,8 @@
             .day-ev .ev-title { grid-column: 2; grid-row: 1; }
             .day-ev .ev-time { grid-column: 1; grid-row: 1; min-width: 110px; }
             .day-ev .ev-actions { grid-column: 3; grid-row: 1; }
+            .schedule-list-details { flex-direction: row; align-items: center; gap: .5rem; }
+            .schedule-list-time { white-space: nowrap; }
         }
 
         #nav-backdrop { display: none; }
@@ -927,7 +934,7 @@
                     <div id="home-empty-state" class="hidden text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
                         <i class="fas fa-check-circle text-6xl text-green-400 mb-4"></i>
                         <h3 class="text-2xl font-bold text-gray-700">¡Todo completado!</h3>
-                        <p class="text-gray-500 mt-2">No tienes más clases pendientes para validar hoy.</p>
+                        <p class="text-gray-500 mt-2">No hay más clases pendientes para validar.</p>
                     </div>
 
                     <div id="today-classes-list" class="space-y-4">
@@ -4306,11 +4313,15 @@
 
                 let eventsHtml = dayEvents.map(ev => {
                     return `
-                        <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-none">
-                            <span class="text-sm font-semibold text-gray-700">De ${ev.startTime} a ${ev.endTime}:</span>
-                            <span class="text-sm text-gray-900 font-medium ml-2 flex-1">${scheduleEventTitle(ev)}</span>
-                            ${classScheduleAction(ev)}
-                            <button onclick="editSchedule('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-2" title="Editar"><i class="fas fa-edit"></i></button><button onclick="deleteSchedule('${ev.id}')" class="text-gray-400 hover:text-red-600 text-xs ml-2" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        <div class="schedule-list-entry py-2 border-b border-gray-100 last:border-none">
+                            <div class="schedule-list-details">
+                                <span class="schedule-list-time text-sm font-semibold text-gray-700">De ${ev.startTime} a ${ev.endTime}:</span>
+                                <span class="schedule-list-title text-sm text-gray-900 font-medium">${scheduleEventTitle(ev)}</span>
+                            </div>
+                            <div class="schedule-list-actions">
+                                ${classScheduleAction(ev)}
+                                <button onclick="editSchedule('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-2" title="Editar"><i class="fas fa-edit"></i></button><button onclick="deleteSchedule('${ev.id}')" class="text-gray-400 hover:text-red-600 text-xs ml-2" title="Eliminar"><i class="fas fa-trash"></i></button>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -5698,12 +5709,26 @@
             if (open) appState.repOpen.add(row.dataset.repRow); else appState.repOpen.delete(row.dataset.repRow);
         }
 
+        // En móvil, los libros con lecciones abren su contenido al pulsar la fila.
+        // Los controles de edición y eliminación conservan su acción independiente.
+        function openMobileBookRow(event, id) {
+            if (!window.matchMedia('(max-width: 767px)').matches) return;
+            if (event.target.closest('button, a, input, select, textarea')) return;
+            if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+            if (event.type === 'keydown') event.preventDefault();
+            showBookContent(id);
+        }
+
         function repRowHtml(r) {
             const isBook = r.type === 'libro';
             const icon = `<i class="fas ${isBook ? 'fa-book text-green-500' : 'fa-music text-indigo-500'} text-lg mr-3 w-5 text-center"></i>`;
-            const actions = `<div class="flex items-center gap-2 shrink-0">${isBook ? repContentBtn(r, 'text-xs px-3 py-1.5') : ''}${repActionsHtml(r)}</div>`;
+            const hasBookContent = isBook && Array.isArray(r.contents) && r.contents.length > 0;
+            const actions = `<div class="flex items-center gap-2 shrink-0">${isBook ? repContentBtn(r, 'hidden md:inline-flex text-xs px-3 py-1.5') : ''}${repActionsHtml(r)}</div>`;
             if (isBook) {
-                return `<div class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50">
+                const mobileRowInteraction = hasBookContent
+                    ? ` onclick="openMobileBookRow(event, '${r.id}')" onkeydown="openMobileBookRow(event, '${r.id}')" tabindex="0" aria-label="Mostrar contenido de ${esc(r.title)}"`
+                    : '';
+                return `<div class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 ${hasBookContent ? 'max-md:cursor-pointer max-md:active:bg-green-50' : ''}"${mobileRowInteraction}>
                     <div class="flex items-center min-w-0">${icon}
                         <div class="min-w-0">
                             <div class="font-semibold text-gray-800 truncate">${esc(r.title)}</div>
