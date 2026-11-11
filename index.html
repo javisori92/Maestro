@@ -857,6 +857,13 @@
             [id^="modal-"] > div { width: calc(100% - 1rem); top: 1rem !important; margin-bottom: 1rem; }
         }
     </style>
+<style id="archived-student-readonly-style">
+        #view-student-detail.archived-student-detail .student-tab-content button:not(.tab-btn),
+        #view-student-detail.archived-student-detail .student-tab-content [onclick],
+        #view-student-detail.archived-student-detail .student-tab-content .cursor-pointer { pointer-events: none !important; }
+        #view-student-detail.archived-student-detail .student-tab-content button { display: none !important; }
+        #view-student-detail.archived-student-detail #student-archived-notice { display: block !important; }
+        </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
 
@@ -1065,6 +1072,10 @@
                         </div>
                     </div>
 
+                    <div class="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Estado del alumnado">
+                        <button id="students-active-tab" type="button" onclick="setStudentListMode('active')" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-sm" aria-selected="true">Alumnos actuales</button>
+                        <button id="students-archived-tab" type="button" onclick="setStudentListMode('archived')" class="px-4 py-2 rounded-lg bg-white border text-gray-700 font-semibold text-sm" aria-selected="false">Antiguos alumnos <span id="archived-count"></span></button>
+                    </div>
                     <div class="bg-white rounded-lg shadow overflow-hidden">
                         <ul id="students-list" class="divide-y divide-gray-200"></ul>
                     </div>
@@ -1235,7 +1246,8 @@
                             <!-- Tab: Info -->
                             <div id="student-tab-info" class="student-tab-content">
                                 <div id="student-info-content" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                                <button onclick="editCurrentStudent()" class="mt-6 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 text-sm font-semibold"><i class="fas fa-edit mr-2"></i> Editar Datos</button>
+                                <div class="mt-6 flex flex-wrap justify-between items-center gap-3"><button id="student-edit-button" onclick="editCurrentStudent()" class=" bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 text-sm font-semibold"><i class="fas fa-edit mr-2"></i> Editar Datos</button><button id="student-archive-button" type="button" onclick="archiveCurrentStudent()" class="bg-amber-100 text-amber-900 border border-amber-300 px-4 py-2 rounded hover:bg-amber-200 text-sm font-semibold"><i class="fas fa-user-minus mr-2"></i> Dar de baja</button></div>
+                                <p id="student-archived-notice" class="hidden mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded p-3"></p>
                             </div>
 
                             <!-- Tab: Attendance -->
@@ -1322,12 +1334,37 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Tipo de Evento</label>
                     <select id="sch-type" class="mt-1 block w-full border rounded px-3 py-2 text-sm" onchange="toggleScheduleStudentSel()">
-                        <option value="class">Clase de Alumno</option>
-                        <option value="office">Trabajo en Oficina</option>
-                        <option value="rehearsal">Ensayo de Pianista Acompañante</option>
                         <option value="audition">Audición / Concierto</option>
+                        <option value="rehearsal">Ensayo de Pianista Acompañante</option>
                         <option value="other">Otro</option>
                     </select>
+                </div>
+                <div id="sch-other-style" class="hidden space-y-3">
+                    <div><label for="sch-other-color" class="block text-sm font-medium text-gray-700">Color del evento</label>
+                        <select id="sch-other-color" onchange="updateOtherEventIconPreview()" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                            <option value="gray">Gris</option><option value="blue">Azul</option><option value="green">Verde</option><option value="purple">Morado</option><option value="red">Rojo</option><option value="orange">Naranja</option><option value="yellow">Amarillo</option><option value="pink">Rosa</option>
+                        </select>
+                    </div>
+                    <div><label for="sch-other-icon" class="block text-sm font-medium text-gray-700">Icono del evento</label>
+                        <div class="mt-1 flex items-center gap-3">
+                        <select id="sch-other-icon" class="block min-w-0 flex-1 border rounded px-3 py-2 text-sm" onchange="updateOtherEventIconPreview()">
+                            <option value="fa-tasks">Tareas</option><option value="fa-calendar-check">Calendario</option><option value="fa-music">Música</option><option value="fa-book">Libro</option><option value="fa-users">Personas</option><option value="fa-star">Estrella</option><option value="fa-clipboard-list">Lista</option><option value="fa-clock">Reloj</option><option value="fa-briefcase">Maletín</option><option value="fa-bell">Aviso</option>
+                        </select>
+                        <span id="sch-other-icon-preview" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700" aria-label="Vista previa del icono" title="Vista previa del icono"><i id="sch-other-icon-preview-symbol" class="fas fa-tasks" aria-hidden="true"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div id="sch-other-recurrence" class="hidden space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div><label for="sch-recurrence" class="block text-sm font-medium text-gray-700">Recurrencia</label>
+                        <select id="sch-recurrence" onchange="updateOtherRecurrenceFields()" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                            <option value="once">Puntual</option><option value="weekly">Semanal</option>
+                        </select>
+                    </div>
+                    <div id="sch-recurrence-end-container" class="hidden">
+                        <label for="sch-recurrence-end" class="block text-sm font-medium text-gray-700">Fecha de finalización</label>
+                        <input type="date" id="sch-recurrence-end" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                        <p class="mt-1 text-xs text-gray-600">Se repetirá el mismo día de la semana, únicamente en días lectivos y hasta antes del final del curso.</p>
+                    </div>
                 </div>
                 <div id="sch-student-container">
                     <label class="block text-sm font-medium text-gray-700">Alumno</label>
@@ -1673,6 +1710,28 @@
     </div>
 
     <!-- Modal: Add/Edit Student -->
+
+    <div id="modal-reactivate" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-[70]" role="dialog" aria-modal="true" aria-labelledby="reactivate-title">
+      <div class="relative mx-auto mt-12 mb-8 p-5 border w-[calc(100%-1rem)] max-w-lg shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center gap-3 mb-4"><h3 id="reactivate-title" class="text-lg font-bold">Dar de alta al alumno</h3><button type="button" onclick="closeModal('modal-reactivate')" aria-label="Cerrar" class="p-2 text-gray-600"><i class="fas fa-times"></i></button></div>
+        <p id="reactivate-student-name" class="font-semibold mb-2"></p>
+        <p id="reactivate-old-slot" class="text-sm text-gray-600 mb-4"></p>
+        <label class="block text-sm font-medium mb-1" for="reactivate-date">Fecha efectiva de alta</label>
+        <input type="date" id="reactivate-date" class="w-full border rounded px-3 py-2 mb-4" onchange="updateReactivationAvailability()">
+        <fieldset class="space-y-2 mb-4"><legend class="font-medium text-sm mb-2">Asignación de horario</legend>
+          <label class="flex gap-2 items-center"><input type="radio" name="reactivate-mode" value="old" onchange="updateReactivationAvailability()"> Recuperar horario anterior</label>
+          <label class="flex gap-2 items-center"><input type="radio" name="reactivate-mode" value="new" onchange="updateReactivationAvailability()"> Asignar otro horario</label>
+          <label class="flex gap-2 items-center"><input type="radio" name="reactivate-mode" value="none" onchange="updateReactivationAvailability()"> Dar de alta sin horario</label>
+        </fieldset>
+        <div id="reactivate-slot-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 hidden">
+          <div><label for="reactivate-day" class="text-sm font-medium">Día</label><select id="reactivate-day" class="block w-full border rounded px-2 py-2" onchange="updateReactivationAvailability()"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select></div>
+          <div><label for="reactivate-start" class="text-sm font-medium">Inicio</label><input type="time" id="reactivate-start" class="block w-full border rounded px-2 py-2" onchange="updateReactivationAvailability()"></div>
+          <div><label for="reactivate-end" class="text-sm font-medium">Fin</label><input type="time" id="reactivate-end" class="block w-full border rounded px-2 py-2" onchange="updateReactivationAvailability()"></div>
+        </div>
+        <p id="reactivate-availability" class="text-sm mb-4" aria-live="polite"></p>
+        <div class="flex flex-wrap justify-end gap-2"><button type="button" onclick="closeModal('modal-reactivate')" class="px-4 py-2 rounded bg-gray-200">Cancelar</button><button type="button" id="reactivate-confirm" onclick="confirmStudentReactivation()" class="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">Confirmar alta</button></div>
+      </div>
+    </div>
     <div id="modal-student" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
         <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
             <div class="flex justify-between items-center mb-4">
@@ -2100,7 +2159,7 @@
             }
         }
 
-        let store = { version: 2, repertoire: [], courses: [], lastCourseId: null };
+        let store = { version: 2, repertoire: [], courses: [], archivedStudents: [], lastCourseId: null };
         const storageKey = () => `maestro_data_${appState.currentUser}`;
         const clone = (o) => JSON.parse(JSON.stringify(o));
         const fmtD = (d) => d ? d.split('-').reverse().join('/') : '—';
@@ -2196,7 +2255,16 @@
                 c.dailyValidations = (c.dailyValidations && Array.isArray(c.dailyValidations.ids)) ? c.dailyValidations : { date: '', ids: [] };
             });
             ids(courses, 'los cursos');
-            return { version: 2, repertoire, courses, lastCourseId: d.lastCourseId || null };
+            const archivedStudents = records(d.archivedStudents, 'los antiguos alumnos', true);
+            ids(archivedStudents, 'los antiguos alumnos');
+            archivedStudents.forEach(st => {
+                strings(st, ['nombre', 'apellidos', 'subject', 'course', 'archivedAt'], 'los antiguos alumnos');
+                st.attendance = records(st.attendance, 'la asistencia de antiguos alumnos', true);
+                st.evaluations = records(st.evaluations, 'las evaluaciones de antiguos alumnos', true);
+                st.completedRepertoire = records(st.completedRepertoire, 'el repertorio de antiguos alumnos', true);
+                st.enrolledSubjects = records(st.enrolledSubjects, 'las asignaturas de antiguos alumnos', true);
+            });
+            return { version: 2, repertoire, courses, archivedStudents, lastCourseId: d.lastCourseId || null };
         }
 
         function activateStore(candidate) {
@@ -2223,7 +2291,7 @@
             appState.settings = clone(DEFAULT_SETTINGS); appState.dailyValidations = { date: '', ids: [] };
             loadMockDataIfNeeded(true); normalizeData();
             const c = { id: generateId(), name: 'Curso 2026/27 (ejemplo)', createdAt: new Date().toISOString(), settings: appState.settings, students: appState.students, schedule: appState.schedule, dailyValidations: appState.dailyValidations };
-            store = { version: 2, repertoire: appState.repertoire, courses: [c], lastCourseId: c.id };
+            store = { version: 2, repertoire: appState.repertoire, courses: [c], archivedStudents: [], lastCourseId: c.id };
             appState.currentCourseId = null; saveUserData();
         }
 
@@ -2552,7 +2620,7 @@
             if (error) { showToast(error, 'warning'); return; }
             if (store.courses.some(c => c.name.toLowerCase() === name.toLowerCase())) { showToast('Ya existe un curso con ese nombre.', 'warning'); return; }
             const prev = latestCourse(), base = clone(prev ? prev.settings : DEFAULT_SETTINGS);
-            const students = prev?.students || [];
+            const students = (prev?.students || []).filter(st => !(store.archivedStudents || []).some(old => old.id === st.id));
             const dy = Number(start.slice(0, 4)) - Number(base.courseStart.slice(0, 4));
             const holidays = (prev ? base.holidays : []).map(h => ({ name: h.name || 'Festivo', date: shiftYears(typeof h === 'string' ? h : h.date, dy) }));
             const c = {
@@ -2789,7 +2857,10 @@
             document.getElementById('sch-change-time').classList.add('hidden');
             document.getElementById('sch-id').value = '';
             document.getElementById('sch-date').value = getTodayDate();
+            document.getElementById('sch-type').value = 'audition';
+            updateOtherEventIconPreview();
             toggleScheduleStudentSel();
+            updateOtherRecurrenceFields();
             document.getElementById('sch-delete-btn')?.classList.add('hidden');
             document.getElementById('sch-close-class').classList.add('hidden');
             openModal('modal-schedule');
@@ -2800,6 +2871,11 @@
             document.getElementById('form-schedule').reset();
             document.getElementById('sch-id').value = ev.id;
             document.getElementById('sch-type').value = ev.type;
+            document.getElementById('sch-other-color').value = eventStyleColor(ev);
+            document.getElementById('sch-other-icon').value = eventStyleIcon(ev);
+            updateOtherEventIconPreview();
+            document.getElementById('sch-recurrence').value = ev.recurrenceGroup ? 'weekly' : 'once';
+            document.getElementById('sch-recurrence-end').value = ev.recurrenceEnd || '';
             if (ev.studentId) document.getElementById('sch-student-id').value = ev.studentId;
             document.getElementById('sch-title').value = ev.title || '';
             document.getElementById('sch-rehearsal-name').value = ev.rehearsalName || '';
@@ -2811,6 +2887,7 @@
             auditionEndManual = ev.type === 'audition' && ev.endTimeMode !== 'automatic';
             setAuditionProgram(ev.type === 'audition' ? ev.program : undefined);
             toggleScheduleStudentSel();
+            updateOtherRecurrenceFields();
             const isClass = ev.type === 'class';
             document.getElementById('schedule-editor-title').textContent = isClass ? 'Gestionar Clase' : 'Nuevo Evento / Tarea';
             setScheduleEditorForClass(isClass);
@@ -3049,7 +3126,7 @@
         });
 
 
-        const currentStudent = () => appState.students.find(st => st.id === appState.currentViewStudentId);
+        const currentStudent = () => appState.students.find(st => st.id === appState.currentViewStudentId) || (store.archivedStudents || []).find(st => st.id === appState.currentViewStudentId);
         const removeCompletedRep = (st, repId) => { st.completedRepertoire = (st.completedRepertoire || []).filter(c => c.repId !== repId); };
 
         function editAttendance(id) {
@@ -3264,7 +3341,7 @@
                 card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5 w-full max-w-5xl mx-auto';
                 
                 if (ev.type === 'class') {
-                    const student = appState.students.find(s => s.id === ev.studentId);
+                    const student = (appState.students.find(s => s.id === ev.studentId) || archivedStudentById(ev.studentId));
                     if (!student) return;
                     
                     let pendingTask = "Ninguna tarea previa registrada.";
@@ -3311,6 +3388,7 @@
                     const theme = themes[ev.type] || themes.other;
                     
                     card.className = `${theme.bg} rounded-xl shadow-sm ${theme.border} border p-5 transition hover:shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-4`;
+                    if (ev.type === 'other') card.style.cssText += eventStyle(ev);
                     card.innerHTML = `
                         <div class="flex items-center gap-5">
                             <div class="${theme.badge} ${theme.textBadge} font-bold py-3 px-4 rounded-xl text-center min-w-[100px] border ${theme.border} flex-shrink-0">
@@ -3320,11 +3398,15 @@
                             <div>
                                 <h4 class="text-xl font-extrabold ${theme.textDark} tracking-tight">${esc(ev.title || 'Evento')}</h4>
                                 <div class="flex items-center gap-2 mt-2 text-sm ${theme.textSub} font-medium">
-                                    <i class="fas ${theme.icon}"></i> ${theme.label}
+                                    <i class="fas ${ev.type === 'other' ? eventStyleIcon(ev) : theme.icon}"></i> ${theme.label}
                                 </div>
                             </div>
                         </div>
-                        <div class="flex justify-end mt-4 lg:mt-0">
+                        <div class="flex flex-col sm:flex-row justify-end gap-2 mt-4 lg:mt-0">
+                            ${ev.type === 'audition' || ev.type === 'rehearsal' ? `
+                            <button type="button" data-event-id="${esc(ev.id)}" onclick="showTodayEventDetails(this.dataset.eventId)" class="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 px-6 py-2.5 rounded-lg font-bold transition shadow-sm text-sm">
+                                <i class="fas fa-eye" aria-hidden="true"></i> Ver detalles
+                            </button>` : ''}
                             <button onclick="validateEvent('${ev.id}')" class="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 bg-white text-gray-800 hover:bg-gray-800 hover:text-white border border-gray-300 px-6 py-2.5 rounded-lg font-bold transition shadow-sm text-sm">
                                 <i class="fas fa-check mr-1"></i> Marcar Completado
                             </button>
@@ -3333,6 +3415,18 @@
                 }
                 listContainer.appendChild(card);
             });
+        }
+
+        function showTodayEventDetails(id) {
+            const event = appState.schedule.find(item => item.id === id);
+            if (!event) return;
+            if (event.type === 'audition') {
+                if (hasAuditionProgram(event)) viewAuditionProgram(id);
+                else if (!appState.readOnly) editSchedule(id);
+                else showToast('Esta audición todavía no tiene un programa registrado.', 'info');
+            } else if (event.type === 'rehearsal') {
+                viewRehearsal(id);
+            }
         }
 
         function recordForClass(records, event) {
@@ -3960,9 +4054,58 @@
         }
 
 
+        const otherEventColors = {
+            gray: ['#f3f4f6', '#374151', '#9ca3af'], blue: ['#dbeafe', '#1e40af', '#3b82f6'],
+            green: ['#dcfce7', '#166534', '#22c55e'], purple: ['#f3e8ff', '#6b21a8', '#a855f7'],
+            red: ['#fee2e2', '#991b1b', '#ef4444'], orange: ['#ffedd5', '#9a3412', '#f97316'],
+            yellow: ['#fef9c3', '#854d0e', '#eab308'], pink: ['#fce7f3', '#9d174d', '#ec4899']
+        };
+        const otherEventIcons = ['fa-tasks', 'fa-calendar-check', 'fa-music', 'fa-book', 'fa-users', 'fa-star', 'fa-clipboard-list', 'fa-clock', 'fa-briefcase', 'fa-bell'];
+        function eventStyleColor(ev) { return Object.hasOwn(otherEventColors, ev?.eventColor) ? ev.eventColor : 'gray'; }
+        function eventStyleIcon(ev) { return otherEventIcons.includes(ev?.eventIcon) ? ev.eventIcon : 'fa-tasks'; }
+        function updateOtherEventIconPreview() {
+            const color = document.getElementById('sch-other-color')?.value;
+            const icon = document.getElementById('sch-other-icon')?.value;
+            const preview = document.getElementById('sch-other-icon-preview');
+            const symbol = document.getElementById('sch-other-icon-preview-symbol');
+            if (!preview || !symbol) return;
+            // El color predeterminado de la muestra es blanco.
+            preview.style.backgroundColor = color === 'gray' || !otherEventColors[color] ? '#ffffff' : otherEventColors[color][0];
+            preview.style.color = otherEventColors[color]?.[1] || '#374151';
+            preview.style.borderColor = otherEventColors[color]?.[2] || '#d1d5db';
+            symbol.className = `fas ${otherEventIcons.includes(icon) ? icon : 'fa-tasks'}`;
+        }
+        function eventStyle(ev) {
+            const [background, foreground, border] = otherEventColors[eventStyleColor(ev)];
+            return `background-color:${background};color:${foreground};border-color:${border};`;
+        }
+
+        function updateOtherRecurrenceFields() {
+            const isOther = document.getElementById('sch-type').value === 'other';
+            const weekly = isOther && document.getElementById('sch-recurrence').value === 'weekly';
+            document.getElementById('sch-other-recurrence').classList.toggle('hidden', !isOther);
+            document.getElementById('sch-recurrence-end-container').classList.toggle('hidden', !weekly);
+            const end = document.getElementById('sch-recurrence-end');
+            end.required = weekly;
+            end.max = appState.settings.courseEnd || '';
+            if (weekly && !end.value) end.value = appState.settings.courseEnd ? toDateKey(new Date(parseLocalDate(appState.settings.courseEnd).getTime() - 86400000)) : '';
+        }
+        function otherWeeklyOccurrences(first, until) {
+            const dates = [];
+            const current = parseLocalDate(first);
+            const last = parseLocalDate(until);
+            for (; current <= last; current.setDate(current.getDate() + 7)) {
+                const date = toDateKey(current);
+                if (isTeachingDay(date)) dates.push(date);
+            }
+            return dates;
+        }
+
         function toggleScheduleStudentSel() {
             const type = document.getElementById('sch-type').value;
             const rehearsal = type === 'rehearsal';
+            document.getElementById('sch-other-style').classList.toggle('hidden', type !== 'other');
+            updateOtherRecurrenceFields();
             document.getElementById('sch-rehearsal-fields').classList.toggle('hidden', !rehearsal);
             ['sch-rehearsal-name', 'sch-rehearsal-instrument', 'sch-rehearsal-work'].forEach(id => {
                 document.getElementById(id).required = rehearsal;
@@ -4016,6 +4159,10 @@
                 startTime: document.getElementById('sch-start').value,
                 endTime: document.getElementById('sch-end').value
             };
+            if (type === 'other') {
+                schData.eventColor = document.getElementById('sch-other-color').value;
+                schData.eventIcon = document.getElementById('sch-other-icon').value;
+            }
             if (type === 'rehearsal') {
                 schData.rehearsalName = document.getElementById('sch-rehearsal-name').value.trim();
                 schData.rehearsalInstrument = document.getElementById('sch-rehearsal-instrument').value.trim();
@@ -4033,13 +4180,45 @@
 
             const previous = appState.schedule;
             const old = id && previous.find(event => event.id === id);
+            const weekly = type === 'other' && document.getElementById('sch-recurrence').value === 'weekly';
+            let occurrences = [];
+            if (weekly) {
+                const until = document.getElementById('sch-recurrence-end').value;
+                const courseEnd = appState.settings.courseEnd;
+                if (!courseEnd || !until || until >= courseEnd || until < schData.date ||
+                    (appState.settings.courseStart && schData.date < appState.settings.courseStart) || schData.date >= courseEnd) {
+                    showToast('La recurrencia debe comenzar dentro del curso y terminar antes de su fecha de finalización.', 'warning');
+                    return;
+                }
+                occurrences = otherWeeklyOccurrences(schData.date, until);
+                if (!occurrences.length) {
+                    showToast('No hay fechas lectivas disponibles en el periodo seleccionado.', 'warning');
+                    return;
+                }
+                schData.recurrenceEnd = until;
+            }
+
             if (old?.closed && (old.date !== schData.date || old.type !== schData.type || old.studentId !== schData.studentId)) {
                 showToast('La fecha, el alumno y el tipo de una clase registrada no se pueden cambiar desde el horario.', 'warning');
                 return;
             }
             if (old?.closed) schData.closed = true;
             if (old?.genKey) { schData.genKey = old.genKey; schData.edited = true; }
-            appState.schedule = old ? previous.map(event => event === old ? schData : event) : [...previous, schData];
+            if (weekly) {
+                // Each occurrence is a normal event; a shared group allows editing/deleting the series.
+                const group = old?.recurrenceGroup || generateId();
+                const retained = previous.filter(event => !(old?.recurrenceGroup ? event.recurrenceGroup === old.recurrenceGroup : event === old));
+                appState.schedule = [...retained, ...occurrences.map((date, index) => ({
+                    ...schData, id: index === 0 ? schData.id : generateId(), date,
+                    recurrenceGroup: group, recurrenceEnd: schData.recurrenceEnd,
+                    recurrenceStart: schData.date
+                }))];
+            } else if (old?.recurrenceGroup) {
+                // Changing a series to punctual removes the remaining occurrences.
+                appState.schedule = [...previous.filter(event => event.recurrenceGroup !== old.recurrenceGroup), schData];
+            } else {
+                appState.schedule = old ? previous.map(event => event === old ? schData : event) : [...previous, schData];
+            }
             if (!saveUserData()) {
                 appState.schedule = previous;
                 packStore();
@@ -4157,7 +4336,7 @@
                     const heightPx = (Math.min(endOffset, END_HOUR - START_HOUR + 1) - clampedStartOffset) * PIXELS_PER_HOUR;
                     
                     let bgColor = 'bg-blue-100 hover:bg-blue-200 text-blue-900 border-blue-500';
-                    const student = ev.type === 'class' && appState.students.find(s => s.id === ev.studentId);
+                    const student = ev.type === 'class' && (appState.students.find(s => s.id === ev.studentId) || archivedStudentById(ev.studentId));
                     const titleDisplay = ev.type === 'class' ? (student ? getFullName(student) : 'Clase con alumno') : ev.type === 'rehearsal' ? 'Ensayo con Pianista Acompañante' : ev.title;
                     let icon = '<i class="fas fa-user-graduate text-[10px] mr-1"></i>';
                     
@@ -4168,11 +4347,12 @@
                     } else if (ev.type === 'audition') { 
                         bgColor = 'bg-orange-100 hover:bg-orange-200 text-orange-900 border-orange-500'; icon = '<i class="fas fa-star text-[10px] mr-1"></i>';
                     } else if (ev.type !== 'class') {
-                        bgColor = 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-400'; icon = '<i class="fas fa-tasks text-[10px] mr-1"></i>';
+                        bgColor = 'border-gray-400'; icon = `<i class="fas ${eventStyleIcon(ev)} text-[10px] mr-1"></i>`;
                     }
 
                     const evBlock = document.createElement('div');
                     evBlock.className = `absolute left-1 right-1 rounded border-l-4 overflow-hidden shadow-sm transition flex text-xs ${bgColor} z-10`;
+                    if (ev.type === 'other') evBlock.style.cssText += eventStyle(ev);
                     evBlock.style.top = `${topPx}px`;
                     const lay = layout.get(ev.id) || { col: 0, cols: 1 };
                     evBlock.style.right = 'auto';
@@ -4238,8 +4418,12 @@
                 if (!hasAuditionProgram(event)) return title;
                 return `<button type="button" data-audition-id="${esc(event.id)}" onclick="viewAuditionProgram(this.dataset.auditionId)" class="text-left text-blue-600 hover:underline break-words" aria-label="Ver programa de ${title}">${title}</button>`;
             }
+            if (event.type === 'rehearsal') {
+                const title = 'Ensayo con Pianista Acompañante';
+                return `<button type="button" data-rehearsal-id="${esc(event.id)}" onclick="viewRehearsal(this.dataset.rehearsalId)" class="text-left text-blue-600 hover:underline break-words" aria-label="Ver detalles de ${title}">${title}</button>`;
+            }
             if (event.type !== 'class') return esc(event.title);
-            const student = appState.students.find(s => s.id === event.studentId);
+            const student = (appState.students.find(s => s.id === event.studentId) || archivedStudentById(event.studentId));
             if (!student) return 'Clase con alumno';
             const name = esc(getFullName(student));
             return `<button type="button" data-student-id="${esc(student.id)}" onclick="viewStudent(this.dataset.studentId, 'schedule')" class="text-left text-blue-600 hover:underline break-words" aria-label="Ver ficha de ${name}">Clase de ${name}</button>`;
@@ -4273,6 +4457,7 @@
                     badge = '<span class="bg-orange-100 text-orange-800 text-xs px-2 py-0.5 rounded font-semibold">Audición</span>';
                 }
 
+                if (ev.type === 'other') badge = `<span class="text-xs px-2 py-0.5 rounded font-semibold" style="${eventStyle(ev)}"><i class="fas ${eventStyleIcon(ev)} mr-1"></i>Otro</span>`;
                 container.innerHTML += `
                     <div class="day-ev p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
                         <div class="ev-title flex flex-wrap items-center gap-2 min-w-0">
@@ -4346,12 +4531,14 @@
         function deleteSchedule(id) {
             const event = appState.schedule.find(s => s.id === id);
             if (!event) return false;
+            const otherSeries = event.type === 'other' && !!event.recurrenceGroup;
             const recurring = !!event.genKey;
-            const question = recurring ? '¿Cancelar solo esta clase? El horario semanal del alumno se mantiene.' : '¿Eliminar este evento del horario?';
+            const question = otherSeries ? '¿Eliminar todas las fechas de este evento semanal?' : recurring ? '¿Cancelar solo esta clase? El horario semanal del alumno se mantiene.' : '¿Eliminar este evento del horario?';
             if (!confirm(question)) return false;
             const previous = appState.schedule;
-            appState.schedule = recurring
-                ? previous.map(s => s === event ? { ...event, cancelled: true } : s)
+            appState.schedule = otherSeries
+                ? previous.filter(s => s.recurrenceGroup !== event.recurrenceGroup)
+                : recurring ? previous.map(s => s === event ? { ...event, cancelled: true } : s)
                 : previous.filter(s => s !== event);
             if (!saveUserData()) {
                 appState.schedule = previous;
@@ -4462,6 +4649,7 @@
                 const end = parseLocalDate(courseEnd);
                 for (const date = parseLocalDate(courseStart < today ? today : courseStart); date <= end; date.setDate(date.getDate() + 1)) {
                     const key = toDateKey(date);
+                    if (student.reactivatedAt && key < student.reactivatedAt) continue;
                     if (date.getDay() === student.mainClassDay && isTeachingDay(key, state.settings)) desired.add(key);
                 }
             }
@@ -4487,22 +4675,148 @@
             renderSchedule();
         }
 
+        function setStudentListMode(mode) {
+            appState.studentListMode = mode === 'archived' ? 'archived' : 'active';
+            renderStudents();
+        }
+        function archivedStudentById(id) { return (store.archivedStudents || []).find(s => s.id === id); }
+        function archiveCurrentStudent() {
+            if (appState.readOnly || archivedStudentById(appState.currentViewStudentId)) return;
+            const st = appState.students.find(s => s.id === appState.currentViewStudentId);
+            if (!st) return;
+            const today = getTodayDate();
+            const proposed = prompt('Fecha de baja (AAAA-MM-DD). Se liberarán las clases desde esa fecha hasta el final del curso:', today);
+            if (proposed === null) return;
+            const date = proposed.trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || toDateKey(parseLocalDate(date)) !== date ||
+                (appState.settings.courseStart && date < appState.settings.courseStart) || (appState.settings.courseEnd && date > appState.settings.courseEnd)) {
+                showToast('Indica una fecha de baja válida dentro del curso actual.', 'warning'); return;
+            }
+            if (!confirm(`¿Dar de baja a ${getFullName(st)} desde el ${fmtD(date)}? Se conservará su historial y se liberarán sus clases desde esa fecha.`)) return;
+            const oldStudents = appState.students, oldSchedule = appState.schedule;
+            const previousArchive = store.archivedStudents || [];
+            appState.students = oldStudents.filter(s => s.id !== st.id);
+            appState.schedule = oldSchedule.filter(ev => !(ev.type === 'class' && ev.studentId === st.id && ev.date >= date));
+            store.archivedStudents = [...previousArchive, {...clone(st), archivedAt: date, archivedCourseId: appState.currentCourseId}];
+            if (!saveUserData()) {
+                appState.students = oldStudents; appState.schedule = oldSchedule; store.archivedStudents = previousArchive; packStore();
+                showToast('No se ha podido guardar la baja. No se han aplicado los cambios.', 'error'); return;
+            }
+            appState.studentListMode = 'archived';
+            navigate('students'); renderSchedule(); populateDropdowns();
+            showToast('Alumno dado de baja. Su historial se conserva.', 'success');
+        }
+        let pendingReactivationId = null;
+        function reactivateStudent(id) {
+            if (appState.readOnly) return;
+            const st = archivedStudentById(id);
+            if (!st || appState.students.some(s => s.id === id)) return;
+            pendingReactivationId = id;
+            document.getElementById('reactivate-student-name').textContent = getFullName(st);
+            const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+            document.getElementById('reactivate-old-slot').textContent = st.mainClassStart && st.mainClassEnd ?
+                `Horario anterior: ${days[Number(st.mainClassDay)] || 'Sin día'} de ${st.mainClassStart} a ${st.mainClassEnd}` : 'Sin horario anterior registrado';
+            const date = document.getElementById('reactivate-date');
+            date.min = [getTodayDate(), appState.settings.courseStart || getTodayDate()].sort().pop();
+            date.max = appState.settings.courseEnd || '';
+            date.value = date.min;
+            document.getElementById('reactivate-day').value = String(st.mainClassDay ?? 1);
+            document.getElementById('reactivate-start').value = st.mainClassStart || '';
+            document.getElementById('reactivate-end').value = st.mainClassEnd || '';
+            const mode = document.querySelector('input[name="reactivate-mode"][value="old"]');
+            mode.checked = !!(st.mainClassStart && st.mainClassEnd);
+            document.querySelector('input[name="reactivate-mode"][value="none"]').checked = !mode.checked;
+            openModal('modal-reactivate'); updateReactivationAvailability();
+        }
+        function reactivationPlan() {
+            const st = archivedStudentById(pendingReactivationId);
+            if (!st) return {error: 'El alumno ya no está archivado.'};
+            const date = document.getElementById('reactivate-date').value;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || toDateKey(parseLocalDate(date)) !== date ||
+                date < getTodayDate() || (appState.settings.courseStart && date < appState.settings.courseStart) ||
+                (appState.settings.courseEnd && date > appState.settings.courseEnd)) return {error: 'Selecciona una fecha válida dentro del curso actual, desde hoy.'};
+            const mode = document.querySelector('input[name="reactivate-mode"]:checked')?.value;
+            if (!mode) return {error: 'Selecciona una opción de horario.'};
+            if (mode === 'none') return {st, date, mode, dates: []};
+            const day = Number(mode === 'old' ? st.mainClassDay : document.getElementById('reactivate-day').value);
+            const startTime = mode === 'old' ? st.mainClassStart : document.getElementById('reactivate-start').value;
+            const endTime = mode === 'old' ? st.mainClassEnd : document.getElementById('reactivate-end').value;
+            if (!Number.isInteger(day) || day < 0 || day > 6 || !/^\d{2}:\d{2}$/.test(startTime || '') || !/^\d{2}:\d{2}$/.test(endTime || '') || startTime >= endTime)
+                return {error: 'Introduce un día y un intervalo horario válido.'};
+            const dates = [];
+            for (const d = parseLocalDate(date), end = parseLocalDate(appState.settings.courseEnd || date); d <= end; d.setDate(d.getDate() + 1)) {
+                const key = toDateKey(d);
+                if (d.getDay() !== day || !isTeachingDay(key, appState.settings)) continue;
+                dates.push(key);
+                const conflict = appState.schedule.find(ev => ev.date === key && !ev.cancelled &&
+                    startTime < ev.endTime && ev.startTime < endTime);
+                if (conflict) return {error: `Horario ocupado el ${fmtD(key)} (${conflict.startTime}–${conflict.endTime}). Elige otro horario o da de alta sin horario.`};
+            }
+            return {st, date, mode, day, startTime, endTime, dates};
+        }
+        function updateReactivationAvailability() {
+            const mode = document.querySelector('input[name="reactivate-mode"]:checked')?.value;
+            document.getElementById('reactivate-slot-fields').classList.toggle('hidden', mode !== 'new');
+            const plan = reactivationPlan();
+            const status = document.getElementById('reactivate-availability');
+            status.textContent = plan.error || (mode === 'none' ? 'Se conservará su historial. Podrás asignar un horario más adelante.' :
+                `Horario disponible para ${plan.dates.length} clases futuras. No se modificarán las clases anteriores.`);
+            status.className = 'text-sm mb-4 ' + (plan.error ? 'text-red-700' : 'text-green-700');
+            document.getElementById('reactivate-confirm').disabled = !!plan.error;
+        }
+        function confirmStudentReactivation() {
+            if (appState.readOnly) return;
+            const plan = reactivationPlan();
+            if (plan.error) { updateReactivationAvailability(); return; }
+            const {st, date, mode, dates} = plan;
+            const previous = store.archivedStudents, oldStudents = appState.students, oldSchedule = appState.schedule;
+            const restored = clone(st);
+            delete restored.archivedAt; delete restored.archivedCourseId;
+            restored.reactivatedAt = date;
+            if (mode === 'none') {
+                restored.mainClassDay = null; restored.mainClassStart = ''; restored.mainClassEnd = '';
+            } else {
+                restored.mainClassDay = plan.day;
+                restored.mainClassStart = plan.startTime;
+                restored.mainClassEnd = plan.endTime;
+            }
+            store.archivedStudents = previous.filter(s => s.id !== st.id);
+            appState.students = [...oldStudents, restored];
+            appState.schedule = [...oldSchedule, ...dates.map(key => ({id: generateId(), type: 'class', studentId: st.id, title: null,
+                date: key, startTime: plan.startTime, endTime: plan.endTime, genKey: st.id + '_' + key}))];
+            if (!saveUserData()) {
+                store.archivedStudents = previous; appState.students = oldStudents; appState.schedule = oldSchedule; packStore();
+                showToast('No se ha podido guardar el alta. No se han aplicado los cambios.', 'error'); return;
+            }
+            pendingReactivationId = null;
+            closeModal('modal-reactivate');
+            appState.studentListMode = 'active';
+            renderStudents(); renderSchedule(); populateDropdowns();
+            showToast('Alumno dado de alta correctamente.', 'success');
+        }
         function renderStudents() {
             const list = document.getElementById('students-list');
             const get = (id) => document.getElementById(id);
+            const archivedMode = appState.studentListMode === 'archived';
+            const sourceStudents = archivedMode ? (store.archivedStudents || []) : appState.students;
+            get('students-active-tab').className = archivedMode ? 'px-4 py-2 rounded-lg bg-white border text-gray-700 font-semibold text-sm' : 'px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-sm';
+            get('students-archived-tab').className = archivedMode ? 'px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-sm' : 'px-4 py-2 rounded-lg bg-white border text-gray-700 font-semibold text-sm';
+            get('students-active-tab').setAttribute('aria-selected', String(!archivedMode));
+            get('students-archived-tab').setAttribute('aria-selected', String(archivedMode));
+            get('archived-count').textContent = `(${(store.archivedStudents || []).length})`;
             const search = get('search-student').value.toLowerCase();
             list.innerHTML = '';
 
             // instrumentos distintos (sin distinguir mayúsculas ni tildes)
             const subjects = new Map();
-            appState.students.forEach(s => { const k = normKey(s.subject); if (k && !subjects.has(k)) subjects.set(k, String(s.subject).trim()); });
+            sourceStudents.forEach(s => { const k = normKey(s.subject); if (k && !subjects.has(k)) subjects.set(k, String(s.subject).trim()); });
             const prevSubject = get('filter-subject').value;
             get('filter-subject').innerHTML = '<option value="">Todos</option>' + [...subjects].sort((a, b) => a[1].localeCompare(b[1], 'es', { sensitivity: 'base' })).map(([k, v]) => `<option value="${esc(k)}">${esc(v.charAt(0).toUpperCase() + v.slice(1))}</option>`).join('');
             get('filter-subject').value = subjects.has(prevSubject) ? prevSubject : '';
 
             const fCourse = get('filter-course').value, fSubject = get('filter-subject').value;
             const ageMin = parseInt(get('filter-age-min').value), ageMax = parseInt(get('filter-age-max').value);
-            const filtered = appState.students.filter(s => {
+            const filtered = sourceStudents.filter(s => {
                 const fullName = getFullName(s).toLowerCase();
                 if (search && !(fullName.includes(search) || (s.subject || '').toLowerCase().includes(search))) return false;
                 if (fCourse && s.course !== fCourse) return false;
@@ -4531,13 +4845,13 @@
             });
 
             const active = !!(search || fCourse || fSubject || !isNaN(ageMin) || !isNaN(ageMax));
-            get('students-count').textContent = `${filtered.length} de ${appState.students.length} alumnos`;
+            get('students-count').textContent = `${filtered.length} de ${sourceStudents.length} alumnos`;
             get('student-filters-clear').classList.toggle('hidden', !active);
             get('student-sort-dir').textContent = dir === 1 ? '↑ Ascendente' : '↓ Descendente';
             get('student-options-badge').classList.toggle('hidden', !(fCourse || fSubject || !isNaN(ageMin) || !isNaN(ageMax) || sortKey !== 'nombre' || dir === -1));
 
             if(filtered.length === 0) {
-                list.innerHTML = `<li class="p-6 text-center text-gray-500">${appState.students.length ? 'No hay alumnos que coincidan con los filtros. Modifica la búsqueda o borra los filtros.' : 'Todavía no hay alumnos registrados. Utiliza «Añadir alumno» para crear el primero.'}</li>`;
+                list.innerHTML = `<li class="p-6 text-center text-gray-500">${sourceStudents.length ? 'No hay alumnos que coincidan con los filtros. Modifica la búsqueda o borra los filtros.' : (archivedMode ? 'No hay antiguos alumnos registrados.' : 'Todavía no hay alumnos registrados. Utiliza «Añadir alumno» para crear el primero.')}</li>`;
                 return;
             }
 
@@ -4546,7 +4860,7 @@
                 const fullName = getFullName(s);
                 li.className = 'px-4 py-4 sm:px-6 hover:bg-gray-50 cursor-pointer flex justify-between items-center';
                 li.onclick = (e) => {
-                    if(e.target.closest('.del-btn')) return;
+                    if(e.target.closest('.del-btn, .reactivate-btn')) return;
                     viewStudent(s.id);
                 };
                 li.innerHTML = `
@@ -4560,9 +4874,8 @@
                         </div>
                     </div>
                     <div>
-                        <button class="del-btn text-red-500 hover:text-red-700 p-2" onclick="deleteStudent('${s.id}')" title="Eliminar Alumno">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        ${archivedMode ? `<button type="button" class="reactivate-btn bg-green-100 text-green-800 border border-green-200 rounded px-3 py-2 text-sm font-semibold hover:bg-green-200" onclick="reactivateStudent('${s.id}')">Dar de alta</button>` : `<button class="del-btn text-red-500 hover:text-red-700 p-2" onclick="deleteStudent('${s.id}')" title="Eliminar Alumno">`}
+                            ${archivedMode ? '' : '<i class="fas fa-trash"></i></button>'}
                     </div>
                 `;
                 list.appendChild(li);
@@ -4640,8 +4953,15 @@
         }
 
         function viewStudent(id, returnView = 'students') {
-            const student = appState.students.find(s => s.id === id);
+            const student = appState.students.find(s => s.id === id) || archivedStudentById(id);
             if(!student) return;
+            const isArchived = !!archivedStudentById(id);
+            document.getElementById('view-student-detail').classList.toggle('archived-student-detail', isArchived);
+            document.getElementById('student-edit-button').classList.toggle('hidden', isArchived);
+            document.getElementById('student-archive-button').classList.toggle('hidden', isArchived || appState.readOnly);
+            const notice = document.getElementById('student-archived-notice');
+            notice.classList.toggle('hidden', !isArchived);
+            if (isArchived) notice.textContent = 'Antiguo alumno · Baja desde el ' + fmtD(student.archivedAt) + '. Historial disponible en modo consulta.';
             appState.currentViewStudentId = id;
             appState.studentReturnView = returnView;
             document.getElementById('student-back-label').textContent = returnView === 'schedule' ? 'Volver al calendario' : 'Volver a Alumnos';
@@ -5709,10 +6029,9 @@
             if (open) appState.repOpen.add(row.dataset.repRow); else appState.repOpen.delete(row.dataset.repRow);
         }
 
-        // En móvil, los libros con lecciones abren su contenido al pulsar la fila.
+        // En la vista Lista, los libros con lecciones abren su contenido al pulsar la fila.
         // Los controles de edición y eliminación conservan su acción independiente.
         function openMobileBookRow(event, id) {
-            if (!window.matchMedia('(max-width: 767px)').matches) return;
             if (event.target.closest('button, a, input, select, textarea')) return;
             if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
             if (event.type === 'keydown') event.preventDefault();
@@ -5728,7 +6047,7 @@
                 const mobileRowInteraction = hasBookContent
                     ? ` onclick="openMobileBookRow(event, '${r.id}')" onkeydown="openMobileBookRow(event, '${r.id}')" tabindex="0" aria-label="Mostrar contenido de ${esc(r.title)}"`
                     : '';
-                return `<div class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 ${hasBookContent ? 'max-md:cursor-pointer max-md:active:bg-green-50' : ''}"${mobileRowInteraction}>
+                return `<div class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 ${hasBookContent ? 'cursor-pointer active:bg-green-50' : ''}"${mobileRowInteraction}>
                     <div class="flex items-center min-w-0">${icon}
                         <div class="min-w-0">
                             <div class="font-semibold text-gray-800 truncate">${esc(r.title)}</div>
