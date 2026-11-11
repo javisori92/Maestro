@@ -767,6 +767,9 @@
             overscroll-behavior-y: contain;
         }
 
+        #modal-audition-program.program-readonly .audition-actions,
+        #modal-audition-program.program-readonly .audition-grip,
+        #modal-audition-program.program-readonly #sch-add-participant { display: none !important; }
         .audition-participant { overflow-wrap: anywhere; }
         .audition-card-head { display: flex; align-items: flex-start; gap: .5rem; }
         .audition-card-text { flex: 1; min-width: 0; }
@@ -1323,6 +1326,11 @@
                     <label class="block text-sm font-medium text-gray-700">Alumno</label>
                     <select id="sch-student-id" class="mt-1 block w-full border rounded px-3 py-2 text-sm"></select>
                 </div>
+                <div id="sch-rehearsal-fields" class="hidden space-y-3">
+                    <div><label for="sch-rehearsal-name" class="block text-sm font-medium text-gray-700">Nombre del alumno</label><input id="sch-rehearsal-name" type="text" class="mt-1 block w-full border rounded px-3 py-2 text-sm" autocomplete="off"></div>
+                    <div><label for="sch-rehearsal-instrument" class="block text-sm font-medium text-gray-700">Instrumento</label><input id="sch-rehearsal-instrument" type="text" class="mt-1 block w-full border rounded px-3 py-2 text-sm"></div>
+                    <div><label for="sch-rehearsal-work" class="block text-sm font-medium text-gray-700">Obra</label><input id="sch-rehearsal-work" type="text" class="mt-1 block w-full border rounded px-3 py-2 text-sm"></div>
+                </div>
                 <div id="sch-title-container" class="hidden">
                     <label class="block text-sm font-medium text-gray-700">Título del Evento</label>
                     <input type="text" id="sch-title" placeholder="Ej: Ensayo General" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
@@ -1337,7 +1345,7 @@
                         <input type="time" id="sch-start" required class="mt-1 block w-full border rounded px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <div class="flex flex-wrap items-center gap-x-2">
+                        <div class="flex items-center justify-between gap-2">
                             <label for="sch-end" class="text-sm font-medium text-gray-700">Hora Fin</label>
                             <button id="sch-end-custom" type="button" class="hidden text-sm font-medium text-blue-700">Personalizar</button>
                         </div>
@@ -1346,6 +1354,26 @@
                     </div>
                 </div>
 
+                <button id="sch-open-program" type="button" class="hidden w-full rounded border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">Ver/Editar Programa</button>
+                <button id="sch-change-time" type="button" class="hidden w-full rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Cambiar horario</button>
+                <div class="pt-4 flex justify-end space-x-2">
+                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium">Guardar Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="modal-rehearsal-detail" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-[60]" role="dialog" aria-modal="true" aria-labelledby="rehearsal-detail-heading">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="flex items-center justify-between gap-3 mb-4"><h3 id="rehearsal-detail-heading" class="text-lg font-bold text-gray-800">Ensayo con Pianista Acompañante</h3><button type="button" onclick="closeModal('modal-rehearsal-detail')" class="p-2 text-gray-600 hover:text-gray-900" aria-label="Cerrar"><i class="fas fa-times"></i></button></div>
+            <div class="space-y-3 text-sm text-gray-800"><p id="rehearsal-detail-name"></p><p id="rehearsal-detail-instrument"></p><p id="rehearsal-detail-work"></p><p id="rehearsal-detail-time"></p></div>
+        </div>
+    </div>
+
+    <div id="modal-audition-program" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-[60]" role="dialog" aria-modal="true" aria-labelledby="audition-program-heading">
+        <div class="relative top-10 mx-auto mb-12 p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="flex items-center justify-between mb-4 gap-2"><h3 id="audition-program-heading" class="text-lg font-bold text-gray-800">Audición</h3><button type="button" id="sch-program-close" class="p-2 text-gray-600 hover:text-gray-900" aria-label="Cerrar programa"><i class="fas fa-times" aria-hidden="true"></i></button></div>
                 <fieldset id="sch-audition-program" class="hidden min-w-0 space-y-3 rounded-lg border border-gray-200 p-3" disabled>
                     <legend class="px-1 text-sm font-semibold text-gray-800">Programa de la audición</legend>
                     <div id="sch-audition-scroll" class="hidden rounded border border-gray-200" role="region" aria-label="Orden de actuación" tabindex="0">
@@ -1357,15 +1385,9 @@
                         <output id="sch-audition-total" class="block text-gray-700" aria-live="polite">—</output>
                     </div>
                 </fieldset>
-                <button id="sch-change-time" type="button" class="hidden w-full rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Cambiar horario</button>
-                <div class="pt-4 flex justify-end space-x-2">
-                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium">Guardar Evento</button>
-                </div>
-            </form>
+            <button id="sch-program-done" type="button" class="mt-4 w-full rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Editar Programa</button>
         </div>
     </div>
-
-
     <div id="modal-schedule-change" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
         <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="flex items-center justify-between gap-2 mb-1">
@@ -2119,7 +2141,7 @@
                         if (!repertoire.length) throw new Error('Falta el repertorio de un participante en la audición.');
                         repertoire.forEach(piece => {
                             strings(piece, ['repId', 'type', 'title', 'author', 'lessonId', 'lessonTitle', 'lessonPages'], 'el repertorio de la audición');
-                            if (!piece.repId || !piece.title || !['obra', 'libro'].includes(piece.type) ||
+                            if ((!piece.repId && !(piece.rehearsalWork && piece.type === 'obra')) || !piece.title || !['obra', 'libro'].includes(piece.type) ||
                                 (piece.type === 'libro' && !piece.lessonTitle)) throw new Error('Obra o lección no válida en el programa.');
                         });
                     });
@@ -2158,12 +2180,15 @@
             appState.currentCourseId = null; saveUserData();
         }
 
+        let storageReadFailed = false;
         function loadUserData() {
+            storageReadFailed = false;
             try {
                 const raw = localStorage.getItem(storageKey());
                 if (raw) activateStore(normalizeStore(JSON.parse(raw)));
                 else seedDemo();
             } catch (err) {
+                storageReadFailed = true;
                 console.error('Datos no legibles:', err);
                 try { localStorage.setItem(storageKey() + '_corrupt_backup', localStorage.getItem(storageKey()) || ''); } catch (_) {}
                 showToast('No se pudieron leer los datos guardados. La app arranca vacía.', 'error', 12000);
@@ -2178,6 +2203,10 @@
         }
 
         function writeStore(candidate) {
+            if (storageReadFailed) {
+                showToast('Guardado bloqueado para proteger los datos anteriores. Exporta una copia y revisa el error de lectura.', 'error', 12000);
+                return false;
+            }
             try { localStorage.setItem(storageKey(), JSON.stringify(candidate)); return true; }
             catch (err) {
                 console.error(err);
@@ -2232,7 +2261,7 @@
             if (!sections.length) return '';
             const details = sections.map(section => {
                 const range = sectionRange(section, '-');
-                return esc(section.title) + (range ? ' <span class="whitespace-nowrap">(p' + range + ')</span>' : '');
+                return esc(section.title) + (range ? ' <span class="whitespace-nowrap">(c.' + range + ')</span>' : '');
             }).join(', ');
             return '<div class="break-words"><span class="text-gray-500 font-semibold">Secciones o movimientos</span><p class="mt-1">' + details + '</p></div>';
         }
@@ -2404,39 +2433,6 @@
             return student;
         }
 
-        function resetCourseReview() {
-            const review = document.getElementById('nc-review');
-            review.classList.add('hidden');
-            document.getElementById('nc-review-list').replaceChildren();
-            document.getElementById('nc-submit').textContent = 'Revisar alumnado';
-        }
-
-        function renderCourseReview(students) {
-            const list = document.getElementById('nc-review-list');
-            list.replaceChildren();
-            if (!students.length) list.textContent = 'El curso se creará sin alumnos.';
-            students.forEach(st => {
-                const note = finalGrade(st);
-                const row = document.createElement('div');
-                row.className = 'bg-gray-50 border border-gray-200 rounded p-3 space-y-2';
-                row.innerHTML = '<label class="block text-sm font-bold text-gray-800"></label><p class="text-xs text-gray-600"></p><select class="block w-full border rounded px-2 py-1 text-sm"><option value="keep">Mantener niveles</option><option value="promote">Avanzar un nivel</option></select><p class="text-sm text-gray-700" aria-live="polite"></p>';
-                const [label, grade, select, levels] = row.children;
-                label.textContent = [st.nombre, st.apellidos].filter(Boolean).join(' ') || st.name || 'Sin nombre';
-                select.id = 'nc-promotion-' + list.childElementCount;
-                label.htmlFor = select.id;
-                grade.textContent = note ? 'Nota utilizada · ' + note.notaFinal + ' · trimestre ' + note.trimester : 'Sin nota trimestral registrada';
-                select.value = note && note.grade > 5 ? 'promote' : 'keep';
-                const update = () => {
-                    const projected = promoteStudent(st, select.value === 'promote');
-                    levels.textContent = [projected.course, ...(projected.enrolledSubjects || []).map(es => es.subject + ' · ' + es.course)].filter(Boolean).join(' | ');
-                };
-                select.addEventListener('change', update);
-                update();
-                list.appendChild(row);
-            });
-            document.getElementById('nc-review').classList.remove('hidden');
-            document.getElementById('nc-submit').textContent = 'Crear curso';
-        }
         const shiftYears = (d, n) => { if (!d) return ''; const x = parseLocalDate(d); x.setFullYear(x.getFullYear() + n); return toDateKey(x); };
 
         function showCourseScreen() {
@@ -2490,8 +2486,7 @@
             for (let i = 1; i <= 3; i++) { set(`nc-t${i}-start`, shiftYears(base[`trimester${i}Start`], 1)); set(`nc-t${i}-end`, shiftYears(base[`trimester${i}End`], 1)); }
             const y = Number((start || getTodayDate()).slice(0, 4));
             set('nc-name', `Curso ${y}/${String(y + 1).slice(2)}`);
-            document.getElementById('nc-info').textContent = prev ? `Se copiarán los alumnos de «${prev.name}» y pasarán al siguiente nivel si su última nota final es mayor de 5. Revisa el nivel propuesto antes de crear el curso. Los festivos se copian desplazados un año.` : 'Primer curso: se crea vacío.';
-            resetCourseReview();
+            document.getElementById('nc-info').textContent = prev ? `Se copiarán los alumnos de «${prev.name}» y pasarán al siguiente nivel si su última nota final es mayor de 5. Los festivos se copian desplazados un año.` : 'Primer curso: se crea vacío.';
             document.getElementById('course-main-pane').classList.add('hidden');
             document.getElementById('nc-pane').classList.remove('hidden');
         }
@@ -2511,16 +2506,11 @@
             if (store.courses.some(c => c.name.toLowerCase() === name.toLowerCase())) { showToast('Ya existe un curso con ese nombre.', 'warning'); return; }
             const prev = latestCourse(), base = clone(prev ? prev.settings : DEFAULT_SETTINGS);
             const students = prev?.students || [];
-            if (document.getElementById('nc-review').classList.contains('hidden')) {
-                renderCourseReview(students);
-                return;
-            }
-            const decisions = document.querySelectorAll('#nc-review-list select');
             const dy = Number(start.slice(0, 4)) - Number(base.courseStart.slice(0, 4));
             const holidays = (prev ? base.holidays : []).map(h => ({ name: h.name || 'Festivo', date: shiftYears(typeof h === 'string' ? h : h.date, dy) }));
             const c = {
                 id: generateId(), name, createdAt: new Date().toISOString(), settings: { ...base, ...settings, holidays },
-                students: students.map((st, i) => promoteStudent(st, decisions[i]?.value === 'promote')),
+                students: students.map(st => { const note = finalGrade(st); return promoteStudent(st, !!note && note.grade > 5); }),
                 schedule: [], dailyValidations: { date: '', ids: [] }
             };
             c.students.forEach(st => generateStudentSchedule(st, true, c));
@@ -2542,11 +2532,10 @@
                 <div id="course-main-pane"><h3 class="text-sm font-bold text-gray-500 uppercase mb-2">Curso actual</h3><div id="course-current" class="mb-6"></div>
                 <h3 class="text-sm font-bold text-gray-500 uppercase mb-2">Consultar curso anterior</h3><div id="course-previous" class="space-y-3 mb-6"></div>
                 <button type="button" onclick="openNewCourseForm()" class="w-full bg-green-600 text-white px-4 py-3 rounded shadow hover:bg-green-700 font-medium"><i class="fas fa-plus mr-2"></i>Nuevo curso</button></div>
-                <div id="nc-pane" oninput="if (event.target.matches('input')) resetCourseReview()" class="hidden bg-white rounded-lg border border-gray-200 p-6 space-y-4"><h3 class="text-lg font-bold text-gray-800">Nuevo curso</h3><p id="nc-info" class="text-xs text-gray-500"></p>
+                <div id="nc-pane" class="hidden bg-white rounded-lg border border-gray-200 p-6 space-y-4"><h3 class="text-lg font-bold text-gray-800">Nuevo curso</h3><p id="nc-info" class="text-xs text-gray-500"></p>
                 <label class="block text-sm font-medium text-gray-700">Nombre<input type="text" id="nc-name" class="mt-1 block w-full border rounded px-3 py-2 text-sm"></label>
                 <div class="grid grid-cols-2 gap-2"><label class="text-xs text-gray-600">Inicio del curso<input type="date" id="nc-start" class="mt-1 block w-full border rounded px-2 py-1 text-sm"></label><label class="text-xs text-gray-600">Fin del curso<input type="date" id="nc-end" class="mt-1 block w-full border rounded px-2 py-1 text-sm"></label></div>${tri}
-                <div id="nc-review" class="hidden space-y-3"><h4 class="font-bold text-gray-800">Revisar alumnado</h4><div id="nc-review-list" class="space-y-2"></div></div>
-                <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="showCourseScreen()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button><button type="button" id="nc-submit" onclick="createNewCourse()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-medium">Revisar alumnado</button></div></div></div></div>`);
+                <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="showCourseScreen()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button><button type="button" id="nc-submit" onclick="createNewCourse()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-medium">Crear curso</button></div></div></div></div>`);
         }
 
         function renameCourse(courseId) {
@@ -2766,6 +2755,9 @@
             document.getElementById('sch-type').value = ev.type;
             if (ev.studentId) document.getElementById('sch-student-id').value = ev.studentId;
             document.getElementById('sch-title').value = ev.title || '';
+            document.getElementById('sch-rehearsal-name').value = ev.rehearsalName || '';
+            document.getElementById('sch-rehearsal-instrument').value = ev.rehearsalInstrument || '';
+            document.getElementById('sch-rehearsal-work').value = ev.rehearsalWork || '';
             document.getElementById('sch-date').value = ev.date;
             document.getElementById('sch-start').value = ev.startTime;
             document.getElementById('sch-end').value = ev.endTime;
@@ -3402,6 +3394,13 @@
             return JSON.parse(select.selectedOptions[0]?.dataset.entry || 'null');
         }
 
+        function rehearsalAuditionCandidates() {
+            const seen = new Set();
+            return appState.schedule.filter(ev => ev.type === 'rehearsal' && ev.rehearsalName?.trim() && ev.rehearsalWork?.trim())
+                .filter(ev => { const key = ev.rehearsalName.trim().toLocaleLowerCase('es') + '\u0000' + ev.rehearsalWork.trim().toLocaleLowerCase('es'); if (seen.has(key)) return false; seen.add(key); return true; })
+                .map(ev => ({studentId: 'rehearsal:' + ev.id, studentName: ev.rehearsalName.trim(), rehearsalWork: ev.rehearsalWork.trim(), rehearsalInstrument: ev.rehearsalInstrument || '', rehearsalId: ev.id}));
+        }
+
         function auditionPieceRow(saved = {}) {
             const row = document.createElement('div');
             row.className = 'audition-piece space-y-2 rounded border border-gray-200 bg-white p-2';
@@ -3418,6 +3417,12 @@
                 groups[type === 'libro' ? 1 : 0].append(auditionOption(entry.id, entry.title + (entry.author ? ' · ' + entry.author : ''), {
                     repId: entry.id, type, title: entry.title, author: entry.author || ''
                 }));
+            }
+            if (saved.rehearsalWork) {
+                works.append(auditionOption('rehearsal-work', saved.rehearsalWork, {repId: saved.repId || 'rehearsal-work', type: 'obra', title: saved.rehearsalWork, rehearsalWork: true}));
+                works.value = 'rehearsal-work';
+                works.disabled = true;
+                return row;
             }
             works.append(new Option(repertoire.length ? 'Selecciona una obra o un libro' : 'Sin repertorio registrado', ''),
                 ...groups.filter(group => group.children.length));
@@ -3468,11 +3473,12 @@
             const selected = new Set(selects.map(select => select.value).filter(Boolean));
             for (const select of selects) {
                 for (const option of select.options) {
-                    option.disabled = !!option.value && option.value !== select.value && selected.has(option.value);
+                    option.hidden = !!option.value && option.value !== select.value && selected.has(option.value);
+                    option.disabled = option.hidden;
                 }
             }
             const pending = selects.filter(select => !select.value).length;
-            const available = appState.students.filter(student => !selected.has(student.id)).length;
+            const available = appState.students.filter(student => !selected.has(student.id)).length + rehearsalAuditionCandidates().filter(student => !selected.has(student.studentId)).length;
             const add = document.getElementById('sch-add-participant');
             add.disabled = available <= pending;
             add.classList.toggle('hidden', add.disabled);
@@ -3491,10 +3497,11 @@
                 : (pieces.length > 1 ? 'Obras:' : 'Obra:');
             row.querySelector('.audition-summary-works').textContent = pieces.map(({ work, lesson }) =>
                 lesson ? lesson.lessonTitle + ' · ' + work.title : work.title).join('; ') || '—';
-            const minutes = auditionDuration(row.querySelector('.audition-duration').value);
-            const seconds = minutes == null ? NaN : Math.round(minutes * 60);
+            const minutes = auditionRowMinutes(row);
+            const seconds = row.querySelector('.audition-minutes').value === '' && row.querySelector('.audition-seconds').value === '' ? NaN : Math.round(minutes * 60);
+            row.querySelector('.audition-summary-duration').closest('p').classList.toggle('hidden', Number.isNaN(seconds));
             row.querySelector('.audition-summary-duration').textContent = Number.isNaN(seconds)
-                ? '—' : Math.floor(seconds / 60) + 'min ' + seconds % 60 + 'seg';
+                ? '' : Math.floor(seconds / 60) + 'min ' + seconds % 60 + 'seg';
         }
 
         let auditionEndManual = false;
@@ -3637,28 +3644,36 @@
         }
 
         function auditionDuration(raw) {
-            const text = raw.trim();
+            const text = String(raw ?? '').trim();
             if (!text) return null;
             const minutes = Number(text.replace(',', '.'));
-            return /^\d+(?:[.,]\d{1,2})?$/.test(text) && Number.isSafeInteger(Math.round(minutes * 100)) ? minutes : NaN;
+            return /^\d+(?:[.,]\d{1,2})?$/.test(text) && Number.isFinite(minutes) ? minutes : NaN;
+        }
+
+        function auditionRowMinutes(row) {
+            const min = Number(row.querySelector('.audition-minutes').value);
+            const sec = Number(row.querySelector('.audition-seconds').value);
+            return (min * 60 + sec) / 60;
+        }
+
+        function formatAuditionDuration(seconds) {
+            return Math.floor(seconds / 60) + 'min ' + (seconds % 60) + 'seg';
         }
 
         function updateAuditionTotal() {
             const rows = document.getElementById('sch-audition-participants').children;
-            let total = 0, missing = 0, valid = 0;
+            let totalSeconds = 0, missing = 0, valid = 0;
             for (const row of rows) {
-                const input = row.querySelector('.audition-duration');
-                const duration = auditionDuration(input.value);
-                input.setCustomValidity(Number.isNaN(duration) ? 'Introduce los minutos con un máximo de dos decimales.' : '');
                 if (!row.querySelector('.audition-student').value) continue;
-                if (duration == null || Number.isNaN(duration)) missing++;
-                else { total += Math.round(duration * 100); valid++; }
+                const min = row.querySelector('.audition-minutes').value;
+                const sec = row.querySelector('.audition-seconds').value;
+                if (min === '' && sec === '') missing++;
+                else { totalSeconds += Math.round(auditionRowMinutes(row) * 60); valid++; }
             }
             const hasParticipants = valid + missing > 0;
-            document.getElementById('sch-audition-duration').classList.toggle('hidden', !hasParticipants);
-            const duration = valid ? (total / 100).toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' min' : '—';
-            document.getElementById('sch-audition-total').textContent = duration + (missing ? ' · ' + missing + ' sin duración indicada' : '');
-            updateAuditionEnd(total, hasParticipants);
+            document.getElementById('sch-audition-duration').classList.toggle('hidden', !valid);
+            document.getElementById('sch-audition-total').textContent = valid ? formatAuditionDuration(totalSeconds) + (missing ? ' · ' + missing + ' sin duración indicada' : '') : '';
+            updateAuditionEnd(totalSeconds * 100 / 60, hasParticipants);
         }
 
         function addAuditionParticipant(saved = {}) {
@@ -3677,11 +3692,14 @@
                 '<label class="block text-sm font-medium text-gray-700">Alumno<select class="audition-student mt-1 block w-full border rounded px-2 py-1" required></select></label>' +
                 '<div class="audition-pieces space-y-2"></div>' +
                 '<button type="button" class="audition-add-piece text-sm font-medium text-blue-700">Añadir obra o lección</button>' +
-                '<label class="block text-sm font-medium text-gray-700">Duración aproximada (min, opcional)<input type="text" inputmode="decimal" placeholder="Ej.: 3,5" class="audition-duration mt-1 block w-full border rounded px-2 py-1"></label></div>';
+                '<div class="text-sm font-medium text-gray-700">Duración aproximada (opcional)<div class="mt-1 flex items-center gap-2"><select aria-label="Minutos" class="audition-minutes w-1/2 border rounded px-3 py-2"></select><span>:</span><select aria-label="Segundos" class="audition-seconds w-1/2 border rounded px-3 py-2"></select></div><p class="text-xs text-gray-500 mt-1">MM:SS</p></div>' +
+                '<button type="button" class="audition-confirm w-full rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white">Añadir</button></div>';
             const edit = row.querySelector('.audition-edit');
             const editor = row.querySelector('.audition-editor');
             const setEditing = open => {
                 editor.classList.toggle('hidden', !open);
+                row.querySelector('.audition-actions').classList.toggle('hidden', open);
+                row.querySelector('.audition-card-head').classList.toggle('hidden', open);
                 edit.setAttribute('aria-expanded', String(open));
                 const label = open ? 'Ocultar edición' : 'Editar';
                 edit.setAttribute('aria-label', label + ' del participante');
@@ -3692,12 +3710,14 @@
             if (!saved.studentId) setEditing(true);
             const studentSelect = row.querySelector('.audition-student');
             const students = [...appState.students].sort((a, b) => getFullName(a).localeCompare(getFullName(b), 'es'));
+            const rehearsals = rehearsalAuditionCandidates();
             studentSelect.append(new Option(students.length ? 'Selecciona un alumno' : 'Sin alumnos registrados', ''),
-                ...students.map(student => auditionOption(student.id, getFullName(student), { studentId: student.id, studentName: getFullName(student) })));
+                ...students.map(student => auditionOption(student.id, getFullName(student), { studentId: student.id, studentName: getFullName(student) })),
+                ...rehearsals.map(student => auditionOption(student.studentId, student.studentName + ' · Pianista acompañante', student)));
             if (saved.studentId) {
-                if (!students.some(student => student.id === saved.studentId)) {
+                if (!students.some(student => student.id === saved.studentId) && !rehearsals.some(student => student.studentId === saved.studentId)) {
                     studentSelect.append(auditionOption(saved.studentId, saved.studentName + ' (guardado en el programa)', {
-                        studentId: saved.studentId, studentName: saved.studentName
+                        studentId: saved.studentId, studentName: saved.studentName, rehearsalWork: saved.rehearsalWork, rehearsalId: saved.rehearsalId
                     }));
                 }
                 studentSelect.value = saved.studentId;
@@ -3719,16 +3739,43 @@
                 updatePieceButtons();
                 return piece;
             };
-            (saved.repertoire?.length ? saved.repertoire : [{}]).forEach(addPiece);
+            const refreshRehearsalWork = (initial = false) => {
+                const chosen = selectedAuditionEntry(studentSelect);
+                const work = chosen?.rehearsalWork;
+                if (work) {
+                    pieces.replaceChildren();
+                    addPiece({rehearsalWork: work});
+                    row.querySelector('.audition-add-piece').classList.add('hidden');
+                } else {
+                    if (!initial) pieces.replaceChildren();
+                    if (!pieces.children.length) (initial && saved.repertoire?.length ? saved.repertoire : [{}]).forEach(addPiece);
+                    row.querySelector('.audition-add-piece').classList.remove('hidden');
+                }
+            };
+            refreshRehearsalWork(true);
             row.querySelector('.audition-add-piece').onclick = () => addPiece().querySelector('select').focus();
-            const duration = row.querySelector('.audition-duration');
-            duration.value = saved.durationMinutes == null ? '' : String(saved.durationMinutes).replace('.', ',');
+            const minutesSelect = row.querySelector('.audition-minutes');
+            const secondsSelect = row.querySelector('.audition-seconds');
+            minutesSelect.append(new Option('MM', ''), ...Array.from({length: 61}, (_, i) => new Option(String(i).padStart(2, '0'), String(i))));
+            secondsSelect.append(new Option('SS', ''), ...Array.from({length: 60}, (_, i) => new Option(String(i).padStart(2, '0'), String(i))));
+            if (saved.durationMinutes != null) {
+                const total = Math.round(saved.durationMinutes * 60);
+                minutesSelect.value = String(Math.min(60, Math.floor(total / 60)));
+                secondsSelect.value = String(total % 60);
+            }
+            row.querySelector('.audition-confirm').onclick = () => {
+                if (!studentSelect.value) { studentSelect.reportValidity(); studentSelect.focus(); return; }
+                setEditing(false);
+                updateAuditionSummary(row);
+                updateAuditionTotal();
+            };
             row.addEventListener('input', event => {
-                if (event.target === duration) updateAuditionTotal();
+                if (event.target === minutesSelect || event.target === secondsSelect) updateAuditionTotal();
                 updateAuditionSummary(row);
             });
             row.addEventListener('change', event => {
                 if (event.target === studentSelect) {
+                    refreshRehearsalWork();
                     updateAuditionAvailability();
                     updateAuditionTotal();
                 }
@@ -3755,6 +3802,75 @@
             updateAuditionTotal();
         }
 
+        function updateAuditionProgramHeading() {
+            const title = document.getElementById('sch-title').value.trim();
+            document.getElementById('audition-program-heading').textContent = title || 'Audición';
+        }
+        document.getElementById('sch-title').addEventListener('input', updateAuditionProgramHeading);
+        document.getElementById('sch-open-program').addEventListener('click', () => {
+            auditionProgramViewId = null;
+            document.getElementById('modal-audition-program').classList.remove('program-readonly');
+            document.getElementById('sch-program-done').classList.remove('hidden');
+            document.getElementById('sch-program-done').textContent = 'Volver al evento';
+            updateAuditionProgramHeading();
+            openModal('modal-audition-program');
+        });
+        let auditionProgramViewId = null;
+        let auditionReturnToEditor = false;
+        function hasAuditionProgram(ev) {
+            return Array.isArray(ev?.program) && ev.program.length > 0;
+        }
+        function viewAuditionProgram(id) {
+            const ev = appState.schedule.find(event => event.id === id && event.type === 'audition');
+            if (!ev) return;
+            if (!hasAuditionProgram(ev)) { editSchedule(id); return; }
+            auditionProgramViewId = id;
+            // Reutilizar el mismo programa, pero sin permitir cambios en la vista de consulta.
+            document.getElementById('audition-program-heading').textContent = ev.title?.trim() || 'Audición';
+            setAuditionProgram(ev.program || []);
+            const modal = document.getElementById('modal-audition-program');
+            modal.classList.add('program-readonly');
+            document.getElementById('sch-audition-program').disabled = true;
+            document.querySelectorAll('#sch-audition-participants .audition-participant').forEach(row => {
+                row.querySelector('.audition-editor').classList.add('hidden');
+                row.querySelector('.audition-card-head').classList.remove('hidden');
+            });
+            document.getElementById('sch-program-done').classList.add('hidden');
+            openModal('modal-audition-program');
+        }
+        function editAuditionProgramFromView() {
+            const id = auditionProgramViewId;
+            if (!id) return;
+            closeModal('modal-audition-program');
+            auditionProgramViewId = null;
+            document.getElementById('modal-audition-program').classList.remove('program-readonly');
+            editSchedule(id);
+            auditionReturnToEditor = true;
+            // El programa editable es el mismo que abre «Ver/Editar Programa».
+            document.getElementById('modal-schedule').classList.add('hidden');
+            updateAuditionProgramHeading();
+            document.getElementById('sch-program-done').classList.remove('hidden');
+            document.getElementById('sch-program-done').textContent = 'Volver al evento';
+            openModal('modal-audition-program');
+        }
+        document.getElementById('sch-program-done').addEventListener('click', () => {
+            if (auditionProgramViewId) editAuditionProgramFromView();
+        }, true);
+        function closeAuditionProgram() {
+            const openEditor = document.querySelector('#sch-audition-participants .audition-editor:not(.hidden)');
+            if (openEditor && !openEditor.closest('.audition-participant').querySelector('.audition-student').value) {
+                openEditor.querySelector('.audition-student').focus();
+                showToast('Selecciona un alumno antes de cerrar el programa.', 'warning');
+                return;
+            }
+            closeModal('modal-audition-program');
+            if (auditionReturnToEditor) { auditionReturnToEditor = false; openModal('modal-schedule'); }
+            if (auditionProgramViewId) auditionProgramViewId = null;
+            updateAuditionTotal();
+        }
+        document.getElementById('sch-program-close').addEventListener('click', () => { if (auditionProgramViewId) { closeModal('modal-audition-program'); auditionProgramViewId = null; } else closeAuditionProgram(); });
+        document.getElementById('sch-program-done').addEventListener('click', () => { if (!auditionProgramViewId) closeAuditionProgram(); });
+
         document.getElementById('sch-add-participant').addEventListener('click', () => {
             if (document.getElementById('sch-add-participant').disabled) return;
             const student = addAuditionParticipant();
@@ -3770,16 +3886,24 @@
                     ...selectedAuditionEntry(piece.querySelector('.audition-work')),
                     ...selectedAuditionEntry(piece.querySelector('.audition-lesson'))
                 })),
-                durationMinutes: auditionDuration(row.querySelector('.audition-duration').value)
+                durationMinutes: row.querySelector('.audition-minutes').value === '' && row.querySelector('.audition-seconds').value === '' ? null : auditionRowMinutes(row)
             }));
         }
 
 
         function toggleScheduleStudentSel() {
             const type = document.getElementById('sch-type').value;
+            const rehearsal = type === 'rehearsal';
+            document.getElementById('sch-rehearsal-fields').classList.toggle('hidden', !rehearsal);
+            ['sch-rehearsal-name', 'sch-rehearsal-instrument', 'sch-rehearsal-work'].forEach(id => {
+                document.getElementById(id).required = rehearsal;
+            });
+            document.getElementById('sch-title-container').classList.toggle('hidden', rehearsal);
+            document.getElementById('sch-title').required = !rehearsal && type !== 'class';
             const program = document.getElementById('sch-audition-program');
             program.classList.toggle('hidden', type !== 'audition');
             program.disabled = type !== 'audition';
+            document.getElementById('sch-open-program').classList.toggle('hidden', type !== 'audition');
             updateAuditionTotal();
             const stuDiv = document.getElementById('sch-student-container');
             const titleDiv = document.getElementById('sch-title-container');
@@ -3791,9 +3915,9 @@
                 document.getElementById('sch-title').required = false;
             } else {
                 stuDiv.classList.add('hidden');
-                titleDiv.classList.remove('hidden');
+                titleDiv.classList.toggle('hidden', rehearsal);
                 document.getElementById('sch-student-id').required = false;
-                document.getElementById('sch-title').required = true;
+                document.getElementById('sch-title').required = !rehearsal;
             }
         }
 
@@ -3811,7 +3935,7 @@
                 }
             }
             const studentId = type === 'class' ? document.getElementById('sch-student-id').value : null;
-            const title = type === 'class' ? null : document.getElementById('sch-title').value;
+            const title = type === 'class' ? null : type === 'rehearsal' ? 'Ensayo con Pianista Acompañante' : document.getElementById('sch-title').value;
             
             const schData = {
                 id: id || generateId(),
@@ -3823,6 +3947,11 @@
                 startTime: document.getElementById('sch-start').value,
                 endTime: document.getElementById('sch-end').value
             };
+            if (type === 'rehearsal') {
+                schData.rehearsalName = document.getElementById('sch-rehearsal-name').value.trim();
+                schData.rehearsalInstrument = document.getElementById('sch-rehearsal-instrument').value.trim();
+                schData.rehearsalWork = document.getElementById('sch-rehearsal-work').value.trim();
+            }
             if (type === 'audition') {
                 schData.program = readAuditionProgram();
                 schData.endTimeMode = document.getElementById('sch-end').readOnly ? 'automatic' : 'manual';
@@ -3960,7 +4089,7 @@
                     
                     let bgColor = 'bg-blue-100 hover:bg-blue-200 text-blue-900 border-blue-500';
                     const student = ev.type === 'class' && appState.students.find(s => s.id === ev.studentId);
-                    const titleDisplay = ev.type === 'class' ? (student ? getFullName(student) : 'Clase con alumno') : ev.title;
+                    const titleDisplay = ev.type === 'class' ? (student ? getFullName(student) : 'Clase con alumno') : ev.type === 'rehearsal' ? 'Ensayo con Pianista Acompañante' : ev.title;
                     let icon = '<i class="fas fa-user-graduate text-[10px] mr-1"></i>';
                     
                     if (ev.type === 'office') {
@@ -3991,14 +4120,14 @@
                         <span class="block font-bold leading-tight truncate">${icon}${ev.closed ? '✓ ' : ''}${esc(titleDisplay)}</span>
                         <span class="block opacity-75 truncate text-[10px]">${esc(ev.startTime)} - ${esc(ev.endTime)}</span>
                     `;
-                    primary.onclick = () => student ? viewStudent(student.id, 'schedule') : editSchedule(ev.id);
+                    primary.onclick = () => student ? viewStudent(student.id, 'schedule') : ev.type === 'audition' ? viewAuditionProgram(ev.id) : ev.type === 'rehearsal' ? viewRehearsal(ev.id) : editSchedule(ev.id);
                     evBlock.appendChild(primary);
 
-                    if (student && !appState.readOnly) {
+                    if ((student || (ev.type === 'audition' && hasAuditionProgram(ev)) || ev.type === 'rehearsal') && !appState.readOnly) {
                         const edit = document.createElement('button');
                         edit.type = 'button';
                         edit.className = 'schedule-week-edit hover:bg-white';
-                        edit.title = 'Editar clase de ' + titleDisplay;
+                        edit.title = ev.type === 'audition' ? 'Editar evento de audición' : ev.type === 'rehearsal' ? 'Editar ensayo' : 'Editar clase de ' + titleDisplay;
                         edit.setAttribute('aria-label', edit.title);
                         edit.innerHTML = '<i class="fas fa-edit" aria-hidden="true"></i>';
                         edit.onclick = () => editSchedule(ev.id);
@@ -4010,7 +4139,31 @@
             }
         }
 
+        function viewRehearsal(id) {
+            const ev = appState.schedule.find(item => item.id === id && item.type === 'rehearsal');
+            if (!ev) return;
+            document.getElementById('rehearsal-detail-heading').textContent = 'Ensayo con Pianista Acompañante';
+            const setRehearsalDetail = (elementId, label, value) => {
+                const element = document.getElementById(elementId);
+                const heading = document.createElement('strong');
+                heading.textContent = label + ': ';
+                element.replaceChildren(heading, document.createTextNode(value));
+            };
+            setRehearsalDetail('rehearsal-detail-name', 'Nombre', ev.rehearsalName || 'Alumno no indicado');
+            setRehearsalDetail('rehearsal-detail-instrument', 'Instrumento', ev.rehearsalInstrument || 'Instrumento no indicado');
+            setRehearsalDetail('rehearsal-detail-work', 'Obra', ev.rehearsalWork || 'Obra no indicada');
+            const date = new Date(ev.date + 'T12:00:00');
+            const day = new Intl.DateTimeFormat('es-ES', {weekday:'long'}).format(date);
+            setRehearsalDetail('rehearsal-detail-time', 'Horario', day.charAt(0).toUpperCase() + day.slice(1) + ' de ' + ev.startTime + ' a ' + ev.endTime);
+            openModal('modal-rehearsal-detail');
+        }
+
         function scheduleEventTitle(event) {
+            if (event.type === 'audition') {
+                const title = esc(event.title?.trim() || 'Audición');
+                if (!hasAuditionProgram(event)) return title;
+                return `<button type="button" data-audition-id="${esc(event.id)}" onclick="viewAuditionProgram(this.dataset.auditionId)" class="text-left text-blue-600 hover:underline break-words" aria-label="Ver programa de ${title}">${title}</button>`;
+            }
             if (event.type !== 'class') return esc(event.title);
             const student = appState.students.find(s => s.id === event.studentId);
             if (!student) return 'Clase con alumno';
