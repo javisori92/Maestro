@@ -700,7 +700,7 @@
             position: fixed;
             bottom: 1rem;
             right: 1rem;
-            z-index: 50;
+            z-index: 70;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
@@ -755,6 +755,65 @@
             input[type="date"]::-webkit-datetime-edit, input[type="time"]::-webkit-datetime-edit { padding: 0; line-height: 1.25rem; }
             [id^="modal-"] label, [id^="modal-"] .grid > div, #course-screen label { min-width: 0; }
         }
+
+        .schedule-week-primary { flex: 1; min-width: 0; padding: 2px 4px; text-align: left; }
+        .schedule-week-edit { flex: 0 0 1.35rem; padding: 0; border-left: 1px solid currentColor; }
+        .schedule-week-primary:focus-visible, .schedule-week-edit:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+
+        #sch-audition-scroll {
+            max-height: 24rem;
+            max-height: min(24rem, 46dvh);
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+        }
+
+        .audition-participant { overflow-wrap: anywhere; }
+        .audition-card-head { display: flex; align-items: flex-start; gap: .5rem; }
+        .audition-card-text { flex: 1; min-width: 0; }
+        .audition-actions { display: flex; flex-shrink: 0; gap: .25rem; }
+        .audition-action {
+            display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem;
+            border: 1px solid #e5e7eb; border-radius: .25rem;
+        }
+        .audition-grip {
+            flex: 0 0 1.5rem; min-height: 2rem; line-height: 1; color: #4b5563;
+            touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab;
+        }
+        .audition-dragging { outline: 2px solid #6366f1; outline-offset: -2px; cursor: grabbing; }
+
+
+
+
+        .quarterly-subjects-table { table-layout: fixed; }
+        .quarterly-subjects-table th, .quarterly-subjects-table td {
+            padding: .4rem .25rem;
+            text-align: left;
+            vertical-align: top;
+            overflow-wrap: anywhere;
+        }
+        .quarterly-subjects-table thead th:first-child { width: 26%; }
+        .quarterly-subjects-table thead th:nth-child(2) { width: 22%; }
+        .quarterly-subjects-table thead th:last-child { width: 14%; }
+        #q-add-other:disabled, .audition-actions button:disabled { opacity: .5; }
+
+
+        .student-subjects { container: student-subjects / inline-size; }
+        .student-subjects-table { display: none; }
+        .student-subjects-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+        .student-subjects-cards > li, .student-subjects-table td { overflow-wrap: anywhere; }
+        @container student-subjects (min-width: 38rem) {
+            .student-subjects-cards { display: none; }
+            .student-subjects-table { display: block; }
+        }
+
+
+        #rep-section-rows {
+            max-height: 15rem;
+            max-height: min(15rem, 36dvh);
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+        }
+        #rep-section-rows:empty { display: none; }
 
         /* Vista diaria del horario: móvil en dos filas, pantallas anchas en una */
         .day-head { display: flex; flex-direction: column; gap: .75rem; }
@@ -1085,6 +1144,7 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                <button id="save-calendar" type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium">Aplicar calendario</button>
                             </div>
                             
                             <!-- 3. Días Festivos -->
@@ -1144,8 +1204,8 @@
                 <!-- VIEW: STUDENT DETAIL -->
                 <section id="view-student-detail" class="app-view hidden">
                     <div class="mb-4 flex items-center">
-                        <button onclick="navigate('students')" class="text-blue-600 hover:text-blue-800 mr-4 font-semibold text-sm">
-                            <i class="fas fa-arrow-left mr-1"></i> Volver a Alumnos
+                        <button type="button" onclick="navigate(appState.studentReturnView || 'students')" class="text-blue-600 hover:text-blue-800 mr-4 font-semibold text-sm">
+                            <i class="fas fa-arrow-left mr-1" aria-hidden="true"></i> <span id="student-back-label">Volver a Alumnos</span>
                         </button>
                         <h2 id="detail-student-name" class="text-2xl font-bold text-gray-800">Nombre del Alumno</h2>
                     </div>
@@ -1211,8 +1271,8 @@
                             <!-- Tab: Quarterly Summary -->
                             <div id="student-tab-quarterly" class="student-tab-content hidden">
                                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <div class="flex justify-between items-center mb-4">
-                                        <h3 class="font-bold text-gray-800 text-base"><i class="fas fa-chart-bar text-indigo-600 mr-2"></i>Resumen Trimestral</h3>
+                                    <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+                                        <h3 class="font-bold text-gray-800 text-base"><i class="fas fa-chart-bar text-indigo-600 mr-2" aria-hidden="true"></i><span id="quarterly-summary-title">Resumen Trimestral</span></h3>
                                         <button onclick="openQuarterlyModal()" class="bg-indigo-600 text-white px-3.5 py-1.5 rounded shadow hover:bg-indigo-700 text-xs font-semibold flex items-center transition">
                                             <i class="fas fa-calculator mr-1"></i> Generar Resumen
                                         </button>
@@ -1244,8 +1304,8 @@
     <div id="modal-schedule" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-800">Nuevo Evento / Tarea</h3>
-                <button onclick="closeModal('modal-schedule')" class="text-gray-600 hover:text-gray-900"><i class="fas fa-times"></i></button>
+                <h3 id="schedule-editor-title" class="text-lg font-bold text-gray-800">Nuevo Evento / Tarea</h3>
+                <button type="button" onclick="closeModal('modal-schedule')" class="p-2 text-gray-600 hover:text-gray-900" aria-label="Cerrar ventana"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
             <form id="form-schedule" class="space-y-4">
                 <input type="hidden" id="sch-id">
@@ -1277,17 +1337,75 @@
                         <input type="time" id="sch-start" required class="mt-1 block w-full border rounded px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Hora Fin</label>
-                        <input type="time" id="sch-end" required class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                        <div class="flex flex-wrap items-center gap-x-2">
+                            <label for="sch-end" class="text-sm font-medium text-gray-700">Hora Fin</label>
+                            <button id="sch-end-custom" type="button" class="hidden text-sm font-medium text-blue-700">Personalizar</button>
+                        </div>
+                        <input type="time" id="sch-end" required aria-describedby="sch-end-help" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                        <p id="sch-end-help" class="hidden mt-1 text-xs text-gray-600" aria-live="polite"></p>
                     </div>
                 </div>
+
+                <fieldset id="sch-audition-program" class="hidden min-w-0 space-y-3 rounded-lg border border-gray-200 p-3" disabled>
+                    <legend class="px-1 text-sm font-semibold text-gray-800">Programa de la audición</legend>
+                    <div id="sch-audition-scroll" class="hidden rounded border border-gray-200" role="region" aria-label="Orden de actuación" tabindex="0">
+                        <ol id="sch-audition-participants" class="space-y-2 bg-gray-50 p-2" role="list"></ol>
+                    </div>
+                    <button id="sch-add-participant" type="button" class="w-full rounded border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700">Añadir participante</button>
+                    <div id="sch-audition-duration" class="hidden border-t border-gray-200 pt-2 text-sm">
+                        <span class="font-semibold text-gray-800">Duración aproximada de la audición</span>
+                        <output id="sch-audition-total" class="block text-gray-700" aria-live="polite">—</output>
+                    </div>
+                </fieldset>
+                <button id="sch-change-time" type="button" class="hidden w-full rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Cambiar horario</button>
                 <div class="pt-4 flex justify-end space-x-2">
-                    <button type="button" onclick="closeModal('modal-schedule')" class="px-4 py-2 bg-gray-200 rounded text-sm">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium">Guardar Evento</button>
+                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium">Guardar Evento</button>
                 </div>
             </form>
         </div>
     </div>
+
+
+    <div id="modal-schedule-change" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="flex items-center justify-between gap-2 mb-1">
+                <h3 class="text-lg font-bold text-gray-800">Cambiar horario</h3>
+                <button type="button" onclick="closeModal('modal-schedule-change')" class="p-2 text-gray-600 hover:text-gray-900" aria-label="Cerrar ventana"><i class="fas fa-times" aria-hidden="true"></i></button>
+            </div>
+            <p id="sch-change-student" class="text-sm text-gray-600 mb-4"></p>
+            <form id="form-schedule-change" class="space-y-3">
+                <input type="hidden" id="sch-change-id">
+                <label class="block text-sm font-medium text-gray-700">Tipo de cambio
+                    <select id="sch-change-mode" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                        <option value="single">Cambio único</option>
+                        <option value="permanent">Cambio permanente</option>
+                    </select>
+                </label>
+                <p id="sch-change-scope" class="text-sm text-gray-600"></p>
+                <label id="sch-change-date-field" class="block text-sm font-medium text-gray-700">Nueva fecha
+                    <input id="sch-change-date" type="date" required class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                </label>
+                <label id="sch-change-day-field" class="hidden text-sm font-medium text-gray-700">Nuevo día semanal
+                    <select id="sch-change-day" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                        <option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option>
+                        <option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option>
+                    </select>
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="block text-sm font-medium text-gray-700">Hora de inicio
+                        <input id="sch-change-start" type="time" required class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                    </label>
+                    <label class="block text-sm font-medium text-gray-700">Hora de fin
+                        <input id="sch-change-end" type="time" required class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                    </label>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium">Aplicar cambio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <!-- Modal: Add Attendance -->
     <div id="modal-book-content" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
@@ -1324,7 +1442,6 @@
                     <select id="att-status" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
                         <option value="present">Asiste</option>
                         <option value="absent">Falta</option>
-                        <option value="changed">Cambio de clase (Puntual/Perm.)</option>
                     </select>
                 </div>
                 <div>
@@ -1343,7 +1460,7 @@
     <div id="modal-evaluation" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-800">Registrar Trabajo Semanal / Clase</h3>
+                <h3 id="evaluation-title" class="text-lg font-bold text-gray-800">Registrar Trabajo Semanal / Clase</h3>
                 <button onclick="closeModal('modal-evaluation')" class="text-gray-600 hover:text-gray-900"><i class="fas fa-times"></i></button>
             </div>
             <form id="form-evaluation" class="space-y-3">
@@ -1351,6 +1468,18 @@
                     <label class="block text-sm font-medium text-gray-700">Fecha de Registro</label>
                     <input type="date" id="ev-date" required class="mt-1 block w-full border rounded px-3 py-2 text-sm">
                 </div>
+                <fieldset id="close-class-attendance" class="hidden border border-gray-200 rounded p-3 space-y-2">
+                    <legend class="px-1 font-bold text-gray-800">Asistencia</legend>
+                    <label class="block text-sm font-medium text-gray-700">Estado
+                        <select id="close-class-status" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                            <option value="present">Asiste</option>
+                            <option value="absent">Falta</option>
+                        </select>
+                    </label>
+                    <label class="block text-sm font-medium text-gray-700">Notas de asistencia
+                        <input id="close-class-notes" type="text" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
+                    </label>
+                </fieldset>
 
                 <div class="border border-gray-200 rounded bg-gray-50 p-2 space-y-2">
                     <label class="block text-xs font-bold text-gray-700 uppercase">Obra o libro del repertorio (opcional)</label>
@@ -1395,7 +1524,8 @@
                             <span>Rendimiento (<span id="ev-perf-val">50</span>%)</span>
                             <span class="text-blue-600 font-bold">Nota: <span id="ev-perf-grade">5.0</span></span>
                         </label>
-                        <input type="range" id="ev-performance" min="0" max="100" value="50" oninput="updatePerfValue()" class="mt-2 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <label class="block mt-2 text-sm"><input type="checkbox" id="ev-has-grade" onchange="updatePerfValue()" checked> Registrar nota</label>
+                        <input aria-label="Nota de la actividad" type="range" id="ev-performance" min="0" max="100" value="50" oninput="updatePerfValue()" class="mt-2 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Observaciones</label>
@@ -1422,7 +1552,7 @@
 
                 <div class="pt-4 flex justify-end space-x-2">
                     <button type="button" onclick="closeModal('modal-evaluation')" class="px-4 py-2 bg-gray-200 rounded text-sm">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium">Guardar Registro</button>
+                    <button type="submit" id="evaluation-submit" class="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium">Guardar Registro</button>
                 </div>
             </form>
         </div>
@@ -1489,6 +1619,16 @@
                     <label class="block text-sm font-medium text-gray-700">Comentarios / Observaciones</label>
                     <textarea id="q-comments" rows="2" class="mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Observaciones generales del trimestre..."></textarea>
                 </div>
+
+                <fieldset class="space-y-2 min-w-0">
+                    <legend class="text-sm font-semibold text-gray-800">Otras Asignaturas:</legend>
+                    <div id="q-other-rows" class="space-y-2"></div>
+                    <div id="q-other-controls" class="flex flex-wrap items-center gap-2">
+                        <select id="q-other-select" aria-label="Asignatura matriculada" class="flex-1 border rounded px-3 py-2 text-sm"></select>
+                        <button id="q-add-other" type="button" class="px-3 py-2 border rounded text-sm font-medium text-indigo-700">Añadir</button>
+                    </div>
+                </fieldset>
+
 
                 <div class="pt-4 flex justify-end space-x-2">
                     <button type="button" onclick="closeModal('modal-quarterly')" class="px-4 py-2 bg-gray-200 rounded text-sm">Cancelar</button>
@@ -1662,10 +1802,11 @@
                             <option value="5">Muy Difícil (Nivel 5)</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Secciones / Movimientos (Opcional)</label>
-                        <textarea id="rep-sections" rows="2" placeholder="I. Allegro, II. Andante..." class="mt-1 block w-full border rounded px-3 py-2 text-sm"></textarea>
-                    </div>
+                    <fieldset class="space-y-2">
+                        <legend class="text-sm font-medium text-gray-700">Secciones o movimientos</legend>
+                        <div id="rep-section-rows" class="space-y-2" role="group" aria-label="Lista de secciones o movimientos" tabindex="0"></div>
+                        <button type="button" onclick="addSectionRow().focus()" class="text-sm text-blue-600 hover:text-blue-800 font-medium"><i class="fas fa-plus mr-1" aria-hidden="true"></i>Añadir sección o movimiento</button>
+                    </fieldset>
                 </div>
 
                 <div id="rep-libro-fields" class="hidden">
@@ -1745,6 +1886,7 @@
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) modal.classList.add('hidden');
+            if (modalId === 'modal-evaluation') appState.closingEventId = null;
         }
 
         let appState = {
@@ -1786,7 +1928,7 @@
         const formatTime = (dateObj) => {
             return dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         };
-        const getFullName = (s) => s.nombre ? `${esc(s.nombre)} ${esc(s.apellidos)}` : (s.name || 'Sin Nombre');
+        const getFullName = (s) => [s.nombre, s.apellidos].filter(Boolean).join(' ') || s.name || 'Sin Nombre';
 
         const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const pad2 = (n) => String(n).padStart(2, '0');
@@ -1796,18 +1938,16 @@
         const isNowWindow = (t, ref) => { if (!t) return false; const diff = ref.getHours() * 60 + ref.getMinutes() - toMinutes(t); return diff >= 0 && diff < 2; };
         const sortEvaluations = (a, b) => (b.date || '').localeCompare(a.date || '') || (b.timestamp || '').localeCompare(a.timestamp || '');
 
-        function getTrimesters() {
-            const st = appState.settings;
+        function getTrimesters(st = appState.settings) {
             return [1, 2, 3].map(i => ({ s: st[`trimester${i}Start`], e: st[`trimester${i}End`] })).filter(t => t.s && t.e);
         }
-        function isTeachingDay(d) {
-            const st = appState.settings;
+        function isTeachingDay(d, st = appState.settings) {
             if ((st.holidays || []).some(h => (typeof h === 'string' ? h : h.date) === d)) return false;
-            const t = getTrimesters();
+            const t = getTrimesters(st);
             if (t.length) return t.some(x => d >= x.s && d <= x.e);
             return (!st.courseStart || d >= st.courseStart) && (!st.courseEnd || d <= st.courseEnd);
         }
-        const visibleSchedule = () => appState.schedule.filter(e => !(e.type === 'class' && e.genKey && !e.edited && !isTeachingDay(e.date)));
+        const visibleSchedule = (state = appState) => state.schedule.filter(e => !e.cancelled && !(e.type === 'class' && e.genKey && !e.edited && !e.closed && !isTeachingDay(e.date, state.settings)));
 
         function layoutDay(events) {
             const items = events.filter(e => e.startTime && e.endTime).map(e => ({ id: e.id, s: toMinutes(e.startTime), e: toMinutes(e.endTime) })).sort((a, b) => a.s - b.s || a.e - b.e);
@@ -1892,30 +2032,110 @@
         }
 
         let store = { version: 2, repertoire: [], courses: [], lastCourseId: null };
-        let dataLoadError = false;
         const storageKey = () => `maestro_data_${appState.currentUser}`;
         const clone = (o) => JSON.parse(JSON.stringify(o));
         const fmtD = (d) => d ? d.split('-').reverse().join('/') : '—';
         const LEVELS = ["1º Iniciación", "2º Iniciación", "1º Básico", "2º Básico", "1º Avanzado", "Solo"];
 
-        function applyStore(d) {
-            if (Array.isArray(d.courses)) {
-                store = { version: 2, repertoire: Array.isArray(d.repertoire) ? d.repertoire : [], courses: d.courses, lastCourseId: d.lastCourseId || null };
-            } else {
-                const settings = { ...DEFAULT_SETTINGS, ...(d.settings || {}) };
-                const y = Number((settings.courseStart || getTodayDate()).slice(0, 4));
-                store = { version: 2, repertoire: Array.isArray(d.repertoire) ? d.repertoire : [], lastCourseId: null, courses: [{
-                    id: generateId(), name: `Curso ${y}/${String(y + 1).slice(2)}`, createdAt: new Date().toISOString(), settings,
-                    students: d.students || [], schedule: d.schedule || [], dailyValidations: d.dailyValidations || { date: '', ids: [] } }] };
-            }
-            store.courses.forEach(c => {
-                c.id = c.id || generateId(); c.name = c.name || 'Curso';
+        function normalizeStore(d) {
+            if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('El archivo no contiene una copia de Maestro.');
+            const modern = Array.isArray(d.courses);
+            const legacy = Array.isArray(d.students) && Array.isArray(d.repertoire) && Array.isArray(d.schedule);
+            if (!modern && !legacy) throw new Error('El archivo no contiene una copia de Maestro.');
+            if (d.version != null && ![1, 2].includes(d.version)) throw new Error('La versión de la copia no es compatible.');
+            const records = (value, label, optional = false) => {
+                if (value == null && optional) return [];
+                if (!Array.isArray(value) || value.some(item => !item || typeof item !== 'object' || Array.isArray(item))) {
+                    throw new Error('Datos no válidos en ' + label + '.');
+                }
+                return value;
+            };
+            const ids = (list, label) => {
+                const seen = new Set();
+                list.forEach(item => {
+                    if (typeof item.id !== 'string' || !/^[\w-]+$/.test(item.id) || seen.has(item.id)) throw new Error('Identificadores no válidos en ' + label + '.');
+                    seen.add(item.id);
+                });
+            };
+            const strings = (item, keys, label) => {
+                if (keys.some(k => item[k] != null && typeof item[k] !== 'string')) throw new Error('Campos no válidos en ' + label + '.');
+            };
+            const repertoire = records(d.repertoire, 'el repertorio', modern);
+            ids(repertoire, 'el repertorio');
+            repertoire.forEach(r => {
+                strings(r, ['title', 'author', 'type', 'tonality'], 'el repertorio');
+                readWorkSections(r.sections);
+                records(r.contents, 'el contenido del libro', true);
+            });
+            const year = String(d.settings?.courseStart || DEFAULT_SETTINGS.courseStart).slice(0, 4);
+            const courses = modern ? records(d.courses, 'los cursos') : [{
+                id: generateId(), name: 'Curso ' + year + '/' + String(Number(year) + 1).slice(-2),
+                createdAt: new Date().toISOString(), settings: d.settings, students: d.students,
+                schedule: d.schedule, dailyValidations: d.dailyValidations
+            }];
+            courses.forEach(c => {
+                c.id = c.id || generateId();
+                c.name = c.name || 'Curso';
+                strings(c, ['name', 'createdAt'], 'los cursos');
+                if (c.settings != null && (typeof c.settings !== 'object' || Array.isArray(c.settings))) throw new Error('Calendario no válido.');
                 c.settings = { ...DEFAULT_SETTINGS, ...(c.settings || {}) };
-                c.students = Array.isArray(c.students) ? c.students : [];
-                c.schedule = Array.isArray(c.schedule) ? c.schedule : [];
+                strings(c.settings, Object.keys(DEFAULT_SETTINGS).filter(k => k !== 'holidays'), 'el calendario');
+                if (!Array.isArray(c.settings.holidays) || c.settings.holidays.some(h => typeof h !== 'string' && (!h || typeof h.date !== 'string'))) throw new Error('Festivos no válidos.');
+                c.students = records(c.students, 'el alumnado');
+                c.schedule = records(c.schedule, 'el horario');
+                ids(c.students, 'el alumnado');
+                ids(c.schedule, 'el horario');
+                c.students.forEach(st => {
+                    strings(st, ['nombre', 'apellidos', 'name', 'subject', 'course'], 'el alumnado');
+                    st.attendance = records(st.attendance, 'la asistencia', true);
+                    st.evaluations = records(st.evaluations, 'las evaluaciones', true);
+                    st.completedRepertoire = records(st.completedRepertoire, 'el historial de repertorio', true);
+                    st.enrolledSubjects = records(st.enrolledSubjects, 'las asignaturas', true);
+                    st.attendance.forEach(row => strings(row, ['date', 'status'], 'la asistencia'));
+                    st.evaluations.forEach(row => {
+                        records(row.otherSubjects, 'las otras asignaturas del trimestre', true).forEach(result => {
+                            strings(result, ['subject', 'notaFinal', 'actitud'], 'las otras asignaturas del trimestre');
+                            if (!Number.isSafeInteger(result.faltas) || result.faltas < 0) throw new Error('Faltas no válidas en el resumen trimestral.');
+                        });
+                        strings(row, ['date', 'timestamp', 'type', 'work', 'next', 'observations'], 'las evaluaciones');
+                        records(row.quarterWorks, 'el repertorio trimestral', true).forEach(work => {
+                            if (work.pagesList != null && !Array.isArray(work.pagesList)) throw new Error('Páginas no válidas en el repertorio trimestral.');
+                        });
+                        for (const [work, fields] of [[row.repWork, ['lessons', 'sectionNames']], [row.nextWork, ['lessons', 'sections']]]) {
+                            if (work != null && (typeof work !== 'object' || Array.isArray(work) || fields.some(field => work[field] != null && !Array.isArray(work[field])))) {
+                                throw new Error('Datos no válidos en el repertorio de una actividad.');
+                            }
+                        }
+                    });
+                });
+                c.schedule.forEach(event => {
+                    if (!event.type || !event.date || !event.startTime || !event.endTime) throw new Error('Hay eventos incompletos en el horario.');
+                    strings(event, ['type', 'date', 'startTime', 'endTime', 'studentId', 'genKey'], 'el horario');
+                    records(event.program, 'el programa de la audición', true).forEach(participant => {
+                        strings(participant, ['studentId', 'studentName'], 'el programa de la audición');
+                        if (!participant.studentId || !participant.studentName || (participant.durationMinutes != null &&
+                            (!Number.isFinite(participant.durationMinutes) || participant.durationMinutes < 0))) throw new Error('Participante no válido en el programa.');
+                        const repertoire = records(participant.repertoire, 'el repertorio de la audición');
+                        if (!repertoire.length) throw new Error('Falta el repertorio de un participante en la audición.');
+                        repertoire.forEach(piece => {
+                            strings(piece, ['repId', 'type', 'title', 'author', 'lessonId', 'lessonTitle', 'lessonPages'], 'el repertorio de la audición');
+                            if (!piece.repId || !piece.title || !['obra', 'libro'].includes(piece.type) ||
+                                (piece.type === 'libro' && !piece.lessonTitle)) throw new Error('Obra o lección no válida en el programa.');
+                        });
+                    });
+                });
                 c.dailyValidations = (c.dailyValidations && Array.isArray(c.dailyValidations.ids)) ? c.dailyValidations : { date: '', ids: [] };
             });
-            appState.repertoire = store.repertoire; appState.currentCourseId = null; appState.readOnly = false;
+            ids(courses, 'los cursos');
+            return { version: 2, repertoire, courses, lastCourseId: d.lastCourseId || null };
+        }
+
+        function activateStore(candidate) {
+            store = candidate;
+            appState.repertoire = store.repertoire;
+            appState.currentCourseId = null;
+            appState.currentViewStudentId = null;
+            appState.readOnly = false;
         }
 
         function normalizeData() {
@@ -1925,7 +2145,7 @@
                 st.evaluations.sort(sortEvaluations);
                 st.attendance.sort((x, y) => (y.date || '').localeCompare(x.date || ''));
             });
-            appState.schedule.forEach(e => { if (e.type === 'class' && e.studentId && !e.genKey) e.genKey = `${e.studentId}_${e.date}`; });
+            appState.schedule.forEach(e => { if (e.type === 'class' && e.studentId && !e.manual && !e.genKey) e.genKey = `${e.studentId}_${e.date}`; });
             appState.settings.holidays = (appState.settings.holidays || []).map(h => typeof h === 'string' ? { name: 'Festivo', date: h } : h);
         }
 
@@ -1939,18 +2159,15 @@
         }
 
         function loadUserData() {
-            let data = null;
             try {
                 const raw = localStorage.getItem(storageKey());
-                if (raw) data = JSON.parse(raw);
+                if (raw) activateStore(normalizeStore(JSON.parse(raw)));
+                else seedDemo();
             } catch (err) {
-                dataLoadError = true;
-                console.error('Datos corruptos:', err);
+                console.error('Datos no legibles:', err);
                 try { localStorage.setItem(storageKey() + '_corrupt_backup', localStorage.getItem(storageKey()) || ''); } catch (_) {}
-                showToast('No se pudieron leer los datos guardados. Se conserva una copia aparte y la app arranca vacía.', 'error', 12000);
+                showToast('No se pudieron leer los datos guardados. La app arranca vacía.', 'error', 12000);
             }
-            if (data) applyStore(data);
-            else if (!dataLoadError) seedDemo();
         }
 
         function packStore() {
@@ -1960,32 +2177,75 @@
             store.repertoire = appState.repertoire;
         }
 
-        function persistStore() {
-            packStore();
-            try { localStorage.setItem(storageKey(), JSON.stringify(store)); return true; }
-            catch (err) { console.error(err); showToast('No se pudo guardar (almacenamiento lleno o bloqueado). Descarga una copia de seguridad.', 'error', 10000); return false; }
-        }
-
-        function saveUserData() {
-            if (!appState.currentUser || appState.readOnly) return false;
-            packStore();
-            try { localStorage.setItem(storageKey(), JSON.stringify(store)); return true; }
+        function writeStore(candidate) {
+            try { localStorage.setItem(storageKey(), JSON.stringify(candidate)); return true; }
             catch (err) {
                 console.error(err);
-                showToast('No se pudo guardar (almacenamiento lleno o bloqueado). Descarga una copia de seguridad.', 'error', 10000);
+                showToast('No se pudo guardar. Comprueba el almacenamiento del navegador e inténtalo de nuevo.', 'error', 10000);
                 return false;
             }
         }
 
+        function persistStore() {
+            packStore();
+            return writeStore(store);
+        }
+
+        function saveUserData() {
+            return !!appState.currentUser && !appState.readOnly && persistStore();
+        }
+
         const normKey = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
         const repKey = (r) => `${r.type === 'libro' ? 'libro' : 'obra'}|${normKey(r.title)}|${normKey(r.author)}`;
-        const splitSections = (t) => String(t || '').split(/[\n,]/).map(x => x.trim()).filter(Boolean);
+        function readWorkSections(sections) {
+            if (sections == null) return [];
+            if (typeof sections === 'string') {
+                return sections.split(/[\n,]/).map(title => title.trim()).filter(Boolean).map(title => ({ title }));
+            }
+            if (!Array.isArray(sections)) throw new Error('Las secciones de la obra no son válidas.');
+            return sections.map(section => {
+                if (typeof section === 'string' && section.trim()) return { title: section.trim() };
+                if (!section || typeof section.title !== 'string' || !section.title.trim()) throw new Error('Cada sección necesita un nombre.');
+                const { startMeasure, endMeasure } = section;
+                const result = { title: section.title.trim() };
+                if (startMeasure == null && endMeasure == null) return result;
+                if (!Number.isSafeInteger(startMeasure) || !Number.isSafeInteger(endMeasure) || startMeasure < 1 || endMeasure < startMeasure) {
+                    throw new Error('Rango de compases no válido en «' + result.title + '».');
+                }
+                return { ...result, startMeasure, endMeasure };
+            });
+        }
+
+        function sectionRange(section, separator = '–') {
+            const { startMeasure, endMeasure } = section;
+            if (startMeasure == null) return '';
+            return startMeasure === endMeasure ? String(startMeasure) : startMeasure + separator + endMeasure;
+        }
+
+        function sectionLabelHtml(section) {
+            const range = sectionRange(section);
+            return esc(section.title) + (range ? ' <span class="text-gray-500">(' + (section.startMeasure === section.endMeasure ? 'compás ' : 'compases ') + range + ')</span>' : '');
+        }
+
+        function workSectionsHtml(work) {
+            const sections = readWorkSections(work.sections);
+            if (!sections.length) return '';
+            const details = sections.map(section => {
+                const range = sectionRange(section, '-');
+                return esc(section.title) + (range ? ' <span class="whitespace-nowrap">(p' + range + ')</span>' : '');
+            }).join(', ');
+            return '<div class="break-words"><span class="text-gray-500 font-semibold">Secciones o movimientos</span><p class="mt-1">' + details + '</p></div>';
+        }
 
         function exportRepertoire() {
             const list = appState.repertoire.map(r => {
                 const o = { type: r.type === 'libro' ? 'libro' : 'obra', title: r.title, author: r.author || '' };
                 if (o.type === 'libro') { if (r.pages) o.pages = r.pages; o.contents = (r.contents || []).map(c => ({ title: c.title, pages: c.pages })); }
-                else { ['tonality', 'measures', 'sections', 'difficulty'].forEach(k => { if (r[k]) o[k] = r[k]; }); }
+                else {
+                    ['tonality', 'measures', 'difficulty'].forEach(k => { if (r[k]) o[k] = r[k]; });
+                    const sections = readWorkSections(r.sections);
+                    if (sections.length) o.sections = sections;
+                }
                 return o;
             });
             const a = document.createElement('a');
@@ -2001,31 +2261,35 @@
             const title = String(x.title ?? '').trim();
             if (!title) return null;
             const isBook = x.type === 'libro';
-            const item = { type: isBook ? 'libro' : 'obra', title, author: String(x.author ?? '').trim(), tonality: '', measures: '', sections: '', difficulty: '', pages: '', contents: [] };
+            const item = { type: isBook ? 'libro' : 'obra', title, author: String(x.author ?? '').trim(), tonality: '', measures: '', sections: [], difficulty: '', pages: '', contents: [] };
             if (isBook) {
                 item.pages = String(x.pages ?? '').trim();
                 item.contents = (Array.isArray(x.contents) ? x.contents : []).map(c => ({ title: String(c && c.title || '').trim(), pages: normPages(c && c.pages) })).filter(c => c.title);
             } else {
-                ['tonality', 'measures', 'sections'].forEach(k => { item[k] = String(x[k] ?? '').trim(); });
+                ['tonality', 'measures'].forEach(k => { item[k] = String(x[k] ?? '').trim(); });
+                item.sections = readWorkSections(x.sections);
                 item.difficulty = [1, 2, 3, 4, 5].includes(Number(x.difficulty)) ? Number(x.difficulty) : '';
             }
             return item;
         }
 
         function mergeSections(current, incoming) {
-            const add = splitSections(incoming), have = new Set(splitSections(current).map(normKey));
-            const fresh = add.filter(t => !have.has(normKey(t)));
-            if (!fresh.length) return current;
-            if (!current) return incoming;
-            const sep = String(current).includes('\n') ? '\n' : ', ';
-            return current + sep + fresh.join(sep);
+            const merged = readWorkSections(current);
+            incoming.forEach(section => {
+                const existing = merged.find(item => normKey(item.title) === normKey(section.title));
+                if (!existing) merged.push(section);
+                else if (section.startMeasure != null) {
+                    existing.startMeasure = section.startMeasure;
+                    existing.endMeasure = section.endMeasure;
+                }
+            });
+            return merged;
         }
 
         function mergeRepertoireItems(list) {
             const res = { added: 0, updated: 0, same: 0, skipped: 0 };
             const index = new Map(appState.repertoire.map(r => [repKey(r), r]));
-            list.forEach(raw => {
-                const x = cleanRepItem(raw);
+            list.map(cleanRepItem).forEach(x => {
                 if (!x) { res.skipped++; return; }
                 const cur = index.get(repKey(x));
                 if (!cur) {
@@ -2034,7 +2298,13 @@
                 }
                 let changed = false;
                 ['tonality', 'measures', 'pages', 'difficulty'].forEach(k => { if (x[k] && String(x[k]) !== String(cur[k] || '')) { cur[k] = x[k]; changed = true; } });
-                if (x.sections) { const m = mergeSections(cur.sections || '', x.sections); if (m !== (cur.sections || '')) { cur.sections = m; changed = true; } }
+                if (x.sections.length) {
+                    const merged = mergeSections(cur.sections, x.sections);
+                    if (JSON.stringify(merged) !== JSON.stringify(readWorkSections(cur.sections))) {
+                        cur.sections = merged;
+                        changed = true;
+                    }
+                }
                 if (x.contents.length) {
                     cur.contents = cur.contents || [];
                     x.contents.forEach(c => {
@@ -2056,8 +2326,21 @@
                     const d = JSON.parse(reader.result);
                     const list = Array.isArray(d) ? d : (d && Array.isArray(d.repertoire) ? d.repertoire : null);
                     if (!list) throw new Error('no contiene repertorio');
-                    const r = mergeRepertoireItems(list);
-                    saveUserData(); populateDropdowns(); renderRepertoire();
+                    const previous = appState.repertoire;
+                    appState.repertoire = clone(previous);
+                    let r;
+                    try {
+                        r = mergeRepertoireItems(list);
+                    } catch (err) {
+                        appState.repertoire = previous;
+                        throw err;
+                    }
+                    if (!saveUserData()) {
+                        appState.repertoire = previous;
+                        packStore();
+                        return;
+                    }
+                    populateDropdowns(); renderRepertoire();
                     showToast(`Repertorio importado: ${r.added} nuevos, ${r.updated} actualizados, ${r.same} sin cambios${r.skipped ? ', ' + r.skipped + ' ignorados' : ''}.`, 'success', 8000);
                 } catch (err) { showToast('Archivo no válido: ' + err.message, 'error'); }
             };
@@ -2081,14 +2364,17 @@
             const reader = new FileReader();
             reader.onload = () => {
                 try {
-                    const d = JSON.parse(reader.result);
-                    const v2 = Array.isArray(d.courses), v1 = Array.isArray(d.students) && Array.isArray(d.repertoire) && Array.isArray(d.schedule);
-                    if (!v2 && !v1) throw new Error('no es una copia de Maestro');
-                    if (!confirm('Se reemplazarán todos los cursos actuales por los del archivo. ¿Continuar?')) return;
-                    applyStore(d); saveUserData(); document.body.classList.remove('ro'); showCourseScreen();
+                    const candidate = normalizeStore(JSON.parse(reader.result));
+                    if (!confirm('La copia contiene ' + candidate.courses.length + ' curso(s). Se reemplazarán todos los cursos y el repertorio actuales. ¿Continuar?')) return;
+                    if (!writeStore(candidate)) return;
+                    activateStore(candidate);
+                    document.body.classList.remove('ro');
+                    document.getElementById('ro-banner').classList.add('hidden');
+                    showCourseScreen();
                     showToast('Copia restaurada correctamente', 'success');
                 } catch (err) { showToast('Archivo no válido: ' + err.message, 'error'); }
             };
+            reader.onerror = () => showToast('No se pudo leer el archivo de copia.', 'error');
             reader.readAsText(file);
         }
 
@@ -2101,20 +2387,55 @@
         const latestCourse = () => [...store.courses].sort((a, b) => (b.settings.courseStart || '').localeCompare(a.settings.courseStart || '') || (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
         const nextLevel = (c) => { const i = LEVELS.indexOf(c); return (i >= 0 && i < 4) ? LEVELS[i + 1] : c; };
         function finalGrade(st) {
-            const q = (st.evaluations || []).filter(e => e.type === 'quarterly' && !isNaN(parseFloat(String(e.notaFinal).replace(',', '.'))))
-                .sort((a, b) => String(b.trimester).localeCompare(String(a.trimester)) || (b.date || '').localeCompare(a.date || ''));
-            return q.length ? parseFloat(String(q[0].notaFinal).replace(',', '.')) : null;
+            const notes = (st.evaluations || []).filter(e => e.type === 'quarterly').map(e => {
+                const match = String(e.notaFinal ?? '').trim().match(/(?:^|\s)(\d{1,2}(?:[.,]\d+)?)$/);
+                return { ...e, grade: match ? Number(match[1].replace(',', '.')) : NaN };
+            }).filter(e => Number.isFinite(e.grade) && e.grade >= 0 && e.grade <= 10);
+            return notes.sort((a, b) => Number(b.trimester) - Number(a.trimester) || (b.date || '').localeCompare(a.date || ''))[0] || null;
         }
-        function promoteStudent(st, res) {
-            const n = clone(st), g = finalGrade(st);
-            n.attendance = []; n.evaluations = [];
-            if (g === null) res.nograde++;
-            else if (g > 5) {
-                const before = n.course + '|' + (n.enrolledSubjects || []).map(e => e.course).join();
-                n.course = nextLevel(n.course); (n.enrolledSubjects || []).forEach(es => { es.course = nextLevel(es.course); });
-                if (before !== n.course + '|' + (n.enrolledSubjects || []).map(e => e.course).join()) res.promoted++; else res.max++;
-            } else res.repeat++;
-            return n;
+
+        function promoteStudent(st, promote) {
+            const student = clone(st);
+            student.attendance = []; student.evaluations = [];
+            if (promote) {
+                student.course = nextLevel(student.course);
+                (student.enrolledSubjects || []).forEach(subject => { subject.course = nextLevel(subject.course); });
+            }
+            return student;
+        }
+
+        function resetCourseReview() {
+            const review = document.getElementById('nc-review');
+            review.classList.add('hidden');
+            document.getElementById('nc-review-list').replaceChildren();
+            document.getElementById('nc-submit').textContent = 'Revisar alumnado';
+        }
+
+        function renderCourseReview(students) {
+            const list = document.getElementById('nc-review-list');
+            list.replaceChildren();
+            if (!students.length) list.textContent = 'El curso se creará sin alumnos.';
+            students.forEach(st => {
+                const note = finalGrade(st);
+                const row = document.createElement('div');
+                row.className = 'bg-gray-50 border border-gray-200 rounded p-3 space-y-2';
+                row.innerHTML = '<label class="block text-sm font-bold text-gray-800"></label><p class="text-xs text-gray-600"></p><select class="block w-full border rounded px-2 py-1 text-sm"><option value="keep">Mantener niveles</option><option value="promote">Avanzar un nivel</option></select><p class="text-sm text-gray-700" aria-live="polite"></p>';
+                const [label, grade, select, levels] = row.children;
+                label.textContent = [st.nombre, st.apellidos].filter(Boolean).join(' ') || st.name || 'Sin nombre';
+                select.id = 'nc-promotion-' + list.childElementCount;
+                label.htmlFor = select.id;
+                grade.textContent = note ? 'Nota utilizada · ' + note.notaFinal + ' · trimestre ' + note.trimester : 'Sin nota trimestral registrada';
+                select.value = note && note.grade > 5 ? 'promote' : 'keep';
+                const update = () => {
+                    const projected = promoteStudent(st, select.value === 'promote');
+                    levels.textContent = [projected.course, ...(projected.enrolledSubjects || []).map(es => es.subject + ' · ' + es.course)].filter(Boolean).join(' | ');
+                };
+                select.addEventListener('change', update);
+                update();
+                list.appendChild(row);
+            });
+            document.getElementById('nc-review').classList.remove('hidden');
+            document.getElementById('nc-submit').textContent = 'Crear curso';
         }
         const shiftYears = (d, n) => { if (!d) return ''; const x = parseLocalDate(d); x.setFullYear(x.getFullYear() + n); return toDateKey(x); };
 
@@ -2139,10 +2460,10 @@
             document.getElementById('course-screen').classList.remove('hidden');
         }
 
-        function openCourse(id, ro = false) {
+        function openCourse(id, ro = false, save = true) {
             const c = store.courses.find(x => x.id === id);
             if (!c) return;
-            if (!appState.readOnly) packStore();
+            if (!appState.readOnly && save) packStore();
             const src = ro ? clone(c) : c;
             appState.currentCourseId = id; appState.readOnly = ro; appState.weeklyTrimesterFor = null; resetStudentControls();
             appState.students = src.students; appState.schedule = src.schedule; appState.settings = src.settings; appState.dailyValidations = src.dailyValidations;
@@ -2156,7 +2477,7 @@
             appState.currentWeekStart = getMonday(base); appState.currentDayOffsetDate = new Date(base);
             document.getElementById('course-screen').classList.add('hidden');
             refreshAll();
-            if (!ro) saveUserData();
+            if (!ro && save) saveUserData();
         }
         function enterEditMode() { if (confirm('¿Pasar este curso anterior a modo edición?')) openCourse(appState.currentCourseId, false); }
 
@@ -2169,7 +2490,8 @@
             for (let i = 1; i <= 3; i++) { set(`nc-t${i}-start`, shiftYears(base[`trimester${i}Start`], 1)); set(`nc-t${i}-end`, shiftYears(base[`trimester${i}End`], 1)); }
             const y = Number((start || getTodayDate()).slice(0, 4));
             set('nc-name', `Curso ${y}/${String(y + 1).slice(2)}`);
-            document.getElementById('nc-info').textContent = prev ? `Se copiarán los alumnos de «${prev.name}» y pasarán al siguiente nivel si su última nota final es mayor de 5. Los festivos se copian desplazados un año.` : 'Primer curso: se crea vacío.';
+            document.getElementById('nc-info').textContent = prev ? `Se copiarán los alumnos de «${prev.name}» y pasarán al siguiente nivel si su última nota final es mayor de 5. Revisa el nivel propuesto antes de crear el curso. Los festivos se copian desplazados un año.` : 'Primer curso: se crea vacío.';
+            resetCourseReview();
             document.getElementById('course-main-pane').classList.add('hidden');
             document.getElementById('nc-pane').classList.remove('hidden');
         }
@@ -2181,20 +2503,33 @@
             const t = {};
             for (let i = 1; i <= 3; i++) {
                 const a = g(`nc-t${i}-start`), b = g(`nc-t${i}-end`);
-                if ((a && b && a >= b) || (a && !b) || (!a && b)) { showToast(`Revisa las fechas del trimestre ${i}.`, 'warning'); return; }
                 t[`trimester${i}Start`] = a; t[`trimester${i}End`] = b;
             }
+            const settings = { courseStart: start, courseEnd: end, ...t };
+            const error = calendarError(settings);
+            if (error) { showToast(error, 'warning'); return; }
             if (store.courses.some(c => c.name.toLowerCase() === name.toLowerCase())) { showToast('Ya existe un curso con ese nombre.', 'warning'); return; }
             const prev = latestCourse(), base = clone(prev ? prev.settings : DEFAULT_SETTINGS);
-            const dy = base.courseStart ? Number(start.slice(0, 4)) - Number(base.courseStart.slice(0, 4)) : 1;
-            const holidays = (base.holidays || []).map(h => ({ name: h.name, date: shiftYears(typeof h === 'string' ? h : h.date, dy) }));
-            const res = { promoted: 0, repeat: 0, nograde: 0, max: 0 };
-            const students = (prev ? prev.students : []).map(st => promoteStudent(st, res));
-            const c = { id: generateId(), name, createdAt: new Date().toISOString(), settings: { ...base, courseStart: start, courseEnd: end, ...t, holidays }, students, schedule: [], dailyValidations: { date: '', ids: [] } };
-            store.courses.push(c);
-            openCourse(c.id, false);
-            regenerateAllSchedules();
-            showToast(`Curso creado. ${res.promoted} alumnos suben de nivel, ${res.repeat} repiten, ${res.nograde} sin nota final y ${res.max} ya en el nivel máximo. Puedes editar cada alumno.`, 'success', 12000);
+            const students = prev?.students || [];
+            if (document.getElementById('nc-review').classList.contains('hidden')) {
+                renderCourseReview(students);
+                return;
+            }
+            const decisions = document.querySelectorAll('#nc-review-list select');
+            const dy = Number(start.slice(0, 4)) - Number(base.courseStart.slice(0, 4));
+            const holidays = (prev ? base.holidays : []).map(h => ({ name: h.name || 'Festivo', date: shiftYears(typeof h === 'string' ? h : h.date, dy) }));
+            const c = {
+                id: generateId(), name, createdAt: new Date().toISOString(), settings: { ...base, ...settings, holidays },
+                students: students.map((st, i) => promoteStudent(st, decisions[i]?.value === 'promote')),
+                schedule: [], dailyValidations: { date: '', ids: [] }
+            };
+            c.students.forEach(st => generateStudentSchedule(st, true, c));
+            packStore();
+            const candidate = { ...store, courses: [...store.courses, c], lastCourseId: c.id };
+            if (!writeStore(candidate)) return;
+            store = candidate;
+            openCourse(c.id, false, false);
+            showToast('Curso creado', 'success');
         }
 
         function buildCourseUI() {
@@ -2207,10 +2542,11 @@
                 <div id="course-main-pane"><h3 class="text-sm font-bold text-gray-500 uppercase mb-2">Curso actual</h3><div id="course-current" class="mb-6"></div>
                 <h3 class="text-sm font-bold text-gray-500 uppercase mb-2">Consultar curso anterior</h3><div id="course-previous" class="space-y-3 mb-6"></div>
                 <button type="button" onclick="openNewCourseForm()" class="w-full bg-green-600 text-white px-4 py-3 rounded shadow hover:bg-green-700 font-medium"><i class="fas fa-plus mr-2"></i>Nuevo curso</button></div>
-                <div id="nc-pane" class="hidden bg-white rounded-lg border border-gray-200 p-6 space-y-4"><h3 class="text-lg font-bold text-gray-800">Nuevo curso</h3><p id="nc-info" class="text-xs text-gray-500"></p>
+                <div id="nc-pane" oninput="if (event.target.matches('input')) resetCourseReview()" class="hidden bg-white rounded-lg border border-gray-200 p-6 space-y-4"><h3 class="text-lg font-bold text-gray-800">Nuevo curso</h3><p id="nc-info" class="text-xs text-gray-500"></p>
                 <label class="block text-sm font-medium text-gray-700">Nombre<input type="text" id="nc-name" class="mt-1 block w-full border rounded px-3 py-2 text-sm"></label>
                 <div class="grid grid-cols-2 gap-2"><label class="text-xs text-gray-600">Inicio del curso<input type="date" id="nc-start" class="mt-1 block w-full border rounded px-2 py-1 text-sm"></label><label class="text-xs text-gray-600">Fin del curso<input type="date" id="nc-end" class="mt-1 block w-full border rounded px-2 py-1 text-sm"></label></div>${tri}
-                <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="showCourseScreen()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button><button type="button" onclick="createNewCourse()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-medium">Crear curso</button></div></div></div></div>`);
+                <div id="nc-review" class="hidden space-y-3"><h4 class="font-bold text-gray-800">Revisar alumnado</h4><div id="nc-review-list" class="space-y-2"></div></div>
+                <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="showCourseScreen()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button><button type="button" id="nc-submit" onclick="createNewCourse()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-medium">Revisar alumnado</button></div></div></div></div>`);
         }
 
         function renameCourse(courseId) {
@@ -2287,7 +2623,7 @@
         }
 
         function applyReadOnlyGuards() {
-            ['openNewStudent','openNewRepertoire','openNewSchedule','editSchedule','deleteSchedule','editAttendance','deleteAttendance','editEvaluation','deleteEvaluation','editCompletedRep','deleteCompletedRep','deleteStudent','editCurrentStudent','editRepertoire','deleteRepertoire','addHoliday','removeHoliday','validateEvent','quickAction','openAttendanceModal','openEvaluationModal','openQuarterlyModal','openStudentRepModal','importData','importRepertoire','loadDemoData','regenerateAllSchedules'].forEach(n => {
+            ['openNewStudent','openNewRepertoire','openNewSchedule','editSchedule','deleteSchedule','editAttendance','deleteAttendance','editEvaluation','deleteEvaluation','editCompletedRep','deleteCompletedRep','deleteStudent','editCurrentStudent','editRepertoire','deleteRepertoire','addHoliday','removeHoliday','validateEvent','openCloseClass','openAttendanceModal','openEvaluationModal','openQuarterlyModal','openStudentRepModal','importData','importRepertoire','loadDemoData','regenerateAllSchedules'].forEach(n => {
                 const orig = window[n]; if (typeof orig !== 'function') return;
                 window[n] = function (...a) {
                     if (appState.readOnly) { showToast('Curso anterior en modo consulta: no se puede modificar.', 'warning'); return; }
@@ -2374,9 +2710,9 @@
                 document.getElementById('ev-next-lessons-wrap').classList.toggle('hidden', !list.length);
                 document.getElementById('ev-next-lessons').innerHTML = list.map(c => `<label class="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" class="nx-lesson-cb rounded border-gray-300 text-blue-600" value="${esc(c.title)}" data-pages="${esc(c.pages)}" onchange="onLessonToggle(this, 'ev-next-pages', '.nx-lesson-cb')"><span>${esc(c.title)} <span class="text-gray-400">(págs. ${esc(c.pages)})</span></span></label>`).join('');
             } else {
-                const secs = String(r.sections || '').split(',').map(x => x.trim()).filter(Boolean);
+                const secs = readWorkSections(r.sections);
                 document.getElementById('ev-next-sections').innerHTML = secs.length
-                    ? secs.map(sec => `<label class="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" class="nx-sec-cb rounded border-gray-300 text-blue-600" value="${esc(sec)}"><span>${esc(sec)}</span></label>`).join('')
+                    ? secs.map(sec => `<label class="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" class="nx-sec-cb rounded border-gray-300 text-blue-600" value="${esc(sec.title)}"><span>${sectionLabelHtml(sec)}</span></label>`).join('')
                     : '<p class="text-[11px] text-gray-500">Esta obra no tiene secciones definidas: se trabajará la obra en general.</p>';
             }
         }
@@ -2402,17 +2738,24 @@
 
         function openNewRepertoire() {
             setBookContent([]);
+            setSectionRows([]);
             document.getElementById('form-repertoire').reset();
             document.getElementById('rep-id').value = '';
             toggleRepertoireFields();
             openModal('modal-repertoire');
         }
         function openNewSchedule() {
+            document.getElementById('schedule-editor-title').textContent = 'Nuevo Evento / Tarea';
             document.getElementById('form-schedule').reset();
+            auditionEndManual = false;
+            setAuditionProgram();
+            setScheduleEditorForClass(false);
+            document.getElementById('sch-change-time').classList.add('hidden');
             document.getElementById('sch-id').value = '';
             document.getElementById('sch-date').value = getTodayDate();
             toggleScheduleStudentSel();
             document.getElementById('sch-delete-btn')?.classList.add('hidden');
+            document.getElementById('sch-close-class').classList.add('hidden');
             openModal('modal-schedule');
         }
         function editSchedule(id) {
@@ -2426,10 +2769,247 @@
             document.getElementById('sch-date').value = ev.date;
             document.getElementById('sch-start').value = ev.startTime;
             document.getElementById('sch-end').value = ev.endTime;
+            auditionEndManual = ev.type === 'audition' && ev.endTimeMode !== 'automatic';
+            setAuditionProgram(ev.type === 'audition' ? ev.program : undefined);
             toggleScheduleStudentSel();
-            document.getElementById('sch-delete-btn')?.classList.remove('hidden');
+            const isClass = ev.type === 'class';
+            document.getElementById('schedule-editor-title').textContent = isClass ? 'Gestionar Clase' : 'Nuevo Evento / Tarea';
+            setScheduleEditorForClass(isClass);
+            const changeButton = document.getElementById('sch-change-time');
+            changeButton.classList.toggle('hidden', !isClass || !appState.settings.courseEnd || appState.settings.courseEnd < getTodayDate());
+            changeButton.onclick = () => openScheduleChange(ev.id);
+            const deleteButton = document.getElementById('sch-delete-btn');
+            deleteButton.textContent = ev.genKey ? 'Cancelar solo esta clase' : 'Eliminar evento';
+            deleteButton.classList.remove('hidden');
+            const closeButton = document.getElementById('sch-close-class');
+            closeButton.classList.toggle('hidden', ev.type !== 'class' || !!ev.closed || ev.date > getTodayDate());
+            closeButton.onclick = () => {
+                if (openCloseClass(ev.id)) closeModal('modal-schedule');
+            };
             openModal('modal-schedule');
         }
+
+        function setScheduleEditorForClass(isClass) {
+            ['sch-type', 'sch-student-id', 'sch-date', 'sch-start', 'sch-end'].forEach(id => {
+                document.getElementById(id).disabled = isClass;
+            });
+            document.querySelector('#form-schedule [type="submit"]').classList.toggle('hidden', isClass);
+        }
+
+        function updateScheduleChangeMode() {
+            const permanent = document.getElementById('sch-change-mode').value === 'permanent';
+            document.getElementById('sch-change-date-field').classList.toggle('hidden', permanent);
+            document.getElementById('sch-change-date').disabled = permanent;
+            document.getElementById('sch-change-day-field').classList.toggle('hidden', !permanent);
+            document.getElementById('sch-change-scope').textContent = permanent
+                ? 'Cambia el horario semanal desde hoy hasta final de curso.'
+                : 'Mueve solo la clase seleccionada.';
+        }
+
+        function classHasActivity(student, event) {
+            return !!recordForClass(student.evaluations.filter(item => item.type === 'weekly'), event);
+        }
+
+        function canMoveOccurrence(student, event) {
+            return event.date >= getTodayDate() && !event.closed && !event.cancelled &&
+                !recordForClass(student.attendance, event) && !classHasActivity(student, event);
+        }
+
+        function weeklySlot(student) {
+            return { day: Number(student.mainClassDay), startTime: student.mainClassStart, endTime: student.mainClassEnd };
+        }
+
+        function openScheduleChange(id) {
+            if (appState.readOnly) return;
+            const event = appState.schedule.find(item => item.id === id && item.type === 'class' && !item.cancelled);
+            const student = event && appState.students.find(item => item.id === event.studentId);
+            if (!student || !appState.settings.courseEnd || appState.settings.courseEnd < getTodayDate()) return;
+            const canMove = canMoveOccurrence(student, event);
+            const slot = canMove ? event : weeklySlot(student);
+            const date = document.getElementById('sch-change-date');
+            date.min = [getTodayDate(), appState.settings.courseStart].sort().pop();
+            date.max = appState.settings.courseEnd;
+            date.value = event.date >= date.min && event.date <= date.max ? event.date : date.min;
+            document.getElementById('sch-change-id').value = id;
+            document.getElementById('sch-change-student').textContent = getFullName(student);
+            document.getElementById('sch-change-start').value = slot.startTime || '';
+            document.getElementById('sch-change-end').value = slot.endTime || '';
+            const day = weeklySlot(student).day;
+            document.getElementById('sch-change-day').value = Number.isInteger(day) && day >= 0 && day <= 6 ? day : parseLocalDate(event.date).getDay();
+            const mode = document.getElementById('sch-change-mode');
+            mode.options[0].disabled = !canMove;
+            mode.value = canMove ? 'single' : 'permanent';
+            updateScheduleChangeMode();
+            closeModal('modal-schedule');
+            openModal('modal-schedule-change');
+            mode.focus();
+        }
+
+        function scheduleConflicts(slot, events, excluded = new Set()) {
+            return events.filter(event => !excluded.has(event.id) && event.date === slot.date &&
+                slot.startTime < event.endTime && event.startTime < slot.endTime);
+        }
+
+        function sameTimeSlot(a, b) {
+            return a.startTime === b.startTime && a.endTime === b.endTime;
+        }
+
+        function moveOccurrence(event, student, slot) {
+            if (!canMoveOccurrence(student, event)) throw new Error('Esa clase ya tiene un registro o su fecha ha pasado.');
+            const events = visibleSchedule();
+            const excluded = new Set([event.id]);
+            const conflicts = scheduleConflicts(slot, events, excluded);
+            if (conflicts.length > 1) throw new Error('El hueco coincide con varios eventos. Elige otro horario.');
+            const other = conflicts[0];
+            const otherStudent = other?.type === 'class' && appState.students.find(item => item.id === other.studentId);
+            const changes = new Map();
+            let students = appState.students, exchange = '';
+            if (other) {
+                if (!otherStudent || otherStudent.id === student.id) throw new Error('El hueco está ocupado. Elige otro horario.');
+                const absence = recordForClass(otherStudent.attendance, other);
+                excluded.add(other.id);
+                if (absence?.status === 'absent' && !other.closed && !classHasActivity(otherStudent, other)) {
+                    changes.set(other.id, { ...other, cancelled: true });
+                    if (!absence.classEventId) {
+                        students = students.map(item => item !== otherStudent ? item : {
+                            ...item,
+                            attendance: item.attendance.map(record => record === absence ? { ...record, classEventId: other.id } : record)
+                        });
+                    }
+                } else {
+                    if (!canMoveOccurrence(otherStudent, other)) throw new Error('La clase de ese hueco ya tiene un registro. Elige otro horario.');
+                    const original = { date: event.date, startTime: event.startTime, endTime: event.endTime };
+                    slot = { date: other.date, startTime: other.startTime, endTime: other.endTime };
+                    if (scheduleConflicts(original, events, excluded).length || scheduleConflicts(slot, events, excluded).length ||
+                        scheduleConflicts(original, [{ ...slot, id: other.id }]).length) {
+                        throw new Error('El intercambio provocaría otro solapamiento.');
+                    }
+                    changes.set(other.id, { ...other, ...original, edited: true });
+                    exchange = getFullName(student) + ' ↔ ' + getFullName(otherStudent) + '\nSolo se intercambian estas dos clases.';
+                }
+            }
+            if (!changes.size && slot.date === event.date && sameTimeSlot(slot, event)) throw new Error('Elige una fecha o una hora distinta.');
+            changes.set(event.id, { ...event, ...slot, edited: true });
+            return { students, schedule: appState.schedule.map(item => changes.get(item.id) || item), exchange };
+        }
+
+        function stageWeeklyChange(assignments) {
+            const today = getTodayDate();
+            const staged = { settings: appState.settings, schedule: clone(appState.schedule), students: [...appState.students] };
+            const originalById = new Map(appState.schedule.map(event => [event.id, event]));
+            const assignedIds = new Set();
+            for (const { student, slot } of assignments) {
+                const updated = { ...student, mainClassDay: slot.day, mainClassStart: slot.startTime, mainClassEnd: slot.endTime };
+                const index = staged.students.findIndex(item => item.id === student.id);
+                staged.students[index] = updated;
+                assignedIds.add(student.id);
+                staged.schedule.forEach(event => {
+                    if (event.type !== 'class' || event.studentId !== student.id || !event.genKey) return;
+                    const originalDate = event.genKey.slice(-10);
+                    if (originalDate < today && event.date < today) return;
+                    const attendance = recordForClass(student.attendance, originalById.get(event.id));
+                    if (!event.edited && !event.cancelled && !event.closed && !attendance && !classHasActivity(student, event)) return;
+                    if (attendance?.status === 'absent' && event.date >= today && !classHasActivity(student, event)) {
+                        event.cancelled = true;
+                        if (!attendance.classEventId) {
+                            updated.attendance = updated.attendance.map(record => record === attendance ? { ...record, classEventId: event.id } : record);
+                        }
+                    }
+                    if (!event.cancelled && !event.closed) event.edited = true;
+                    const date = getMonday(parseLocalDate(originalDate));
+                    date.setDate(date.getDate() + (slot.day + 6) % 7);
+                    const newDate = toDateKey(date);
+                    if (originalDate >= today && newDate >= today && newDate <= staged.settings.courseEnd) event.genKey = student.id + '_' + newDate;
+                });
+                generateStudentSchedule(updated, true, staged);
+            }
+            const visible = visibleSchedule(staged);
+            const conflicts = visible.filter(event => {
+                if (!assignedIds.has(event.studentId) || !event.genKey || event.edited || event.closed || event.date < today) return false;
+                const original = originalById.get(event.id);
+                return !original || original.date !== event.date || !sameTimeSlot(original, event);
+            }).flatMap(event => scheduleConflicts(event, visible, new Set([event.id])));
+            return { ...staged, conflicts };
+        }
+
+        function hasRemainingWeeklyDate(day) {
+            const settings = appState.settings;
+            const start = parseLocalDate([getTodayDate(), settings.courseStart].sort().pop());
+            start.setDate(start.getDate() + (day - start.getDay() + 7) % 7);
+            const end = parseLocalDate(settings.courseEnd);
+            for (const date = start; date <= end; date.setDate(date.getDate() + 7)) {
+                if (isTeachingDay(toDateKey(date), settings)) return true;
+            }
+            return false;
+        }
+
+        function moveWeeklySchedule(student, requestedSlot) {
+            const originalSlot = weeklySlot(student);
+            if (!Number.isInteger(requestedSlot.day) || requestedSlot.day < 0 || requestedSlot.day > 6) throw new Error('Selecciona un día de la semana.');
+            if (!hasRemainingWeeklyDate(requestedSlot.day)) throw new Error('No quedan días lectivos para ese horario antes de fin de curso.');
+            if (originalSlot.day === requestedSlot.day && sameTimeSlot(originalSlot, requestedSlot)) throw new Error('Elige un día o una hora distinta.');
+            const candidate = stageWeeklyChange([{ student, slot: requestedSlot }]);
+            if (!candidate.conflicts.length) return candidate;
+            const [first] = candidate.conflicts;
+            const other = first.type === 'class' && appState.students.find(item => item.id === first.studentId);
+            const otherSlot = other && weeklySlot(other);
+            if (!other || other.id === student.id || !originalSlot.startTime || !originalSlot.endTime ||
+                !Number.isInteger(originalSlot.day) || originalSlot.day < 0 || originalSlot.day > 6 ||
+                candidate.conflicts.some(event => event.type !== 'class' || event.studentId !== other.id ||
+                    !event.genKey || event.edited || event.closed || parseLocalDate(event.date).getDay() !== otherSlot.day || !sameTimeSlot(event, otherSlot))) {
+                throw new Error('Ese horario coincide con otros eventos o con un cambio puntual. Elige otro hueco.');
+            }
+            if (!hasRemainingWeeklyDate(originalSlot.day)) throw new Error('El horario de origen no tiene días lectivos restantes para el intercambio.');
+            const exchange = stageWeeklyChange([{ student, slot: otherSlot }, { student: other, slot: originalSlot }]);
+            if (exchange.conflicts.length) throw new Error('El intercambio provocaría otros solapamientos en el curso.');
+            return { ...exchange, exchange: getFullName(student) + ' ↔ ' + getFullName(other) + '\nSe intercambian sus horarios semanales desde hoy hasta final de curso.' };
+        }
+
+        document.getElementById('sch-change-mode').addEventListener('change', updateScheduleChangeMode);
+        document.getElementById('form-schedule-change').addEventListener('submit', e => {
+            e.preventDefault();
+            if (appState.readOnly) return;
+            const value = id => document.getElementById('sch-change-' + id).value;
+            const event = appState.schedule.find(item => item.id === value('id') && item.type === 'class' && !item.cancelled);
+            const student = event && appState.students.find(item => item.id === event.studentId);
+            if (!student) return;
+            const slot = { startTime: value('start'), endTime: value('end') };
+            if (!slot.startTime || !slot.endTime || slot.startTime >= slot.endTime) {
+                showToast('La hora de inicio debe ser anterior a la hora de fin.', 'warning');
+                return;
+            }
+            const permanent = value('mode') === 'permanent';
+            let plan;
+            try {
+                if (permanent) {
+                    plan = moveWeeklySchedule(student, { ...slot, day: Number(value('day')) });
+                } else {
+                    const date = value('date');
+                    if (!date || date < getTodayDate() || date < appState.settings.courseStart || date > appState.settings.courseEnd || !isTeachingDay(date)) {
+                        throw new Error('Elige un día lectivo entre hoy y el final del curso.');
+                    }
+                    plan = moveOccurrence(event, student, { ...slot, date });
+                }
+            } catch (err) {
+                showToast(err.message, 'warning');
+                return;
+            }
+            if (plan.exchange && !confirm('¿Intercambiar horarios?\n\n' + plan.exchange)) return;
+            const previous = { students: appState.students, schedule: appState.schedule };
+            appState.students = plan.students;
+            appState.schedule = plan.schedule;
+            if (!saveUserData()) {
+                Object.assign(appState, previous);
+                packStore();
+                return;
+            }
+            closeModal('modal-schedule-change');
+            renderSchedule();
+            renderHome();
+            showToast(permanent ? 'Horario semanal actualizado' : 'Clase cambiada de horario', 'success');
+        });
+
+
         const currentStudent = () => appState.students.find(st => st.id === appState.currentViewStudentId);
         const removeCompletedRep = (st, repId) => { st.completedRepertoire = (st.completedRepertoire || []).filter(c => c.repId !== repId); };
 
@@ -2439,7 +3019,13 @@
             openAttendanceModal();
             document.getElementById('att-id').value = id;
             document.getElementById('att-date').value = a.date;
-            document.getElementById('att-status').value = a.status;
+            const status = document.getElementById('att-status');
+            if (a.status === 'changed') {
+                const legacy = new Option('Cambio de clase', 'changed');
+                legacy.hidden = true;
+                status.add(legacy);
+            }
+            status.value = a.status;
             document.getElementById('att-notes').value = a.notes || '';
         }
         function deleteAttendance(id) {
@@ -2457,7 +3043,8 @@
             document.getElementById('ev-date').value = e.date;
             document.getElementById('ev-work').value = e.work || '';
             document.getElementById('ev-next').value = e.next || '';
-            document.getElementById('ev-performance').value = e.performance || 50;
+            document.getElementById('ev-performance').value = e.performance ?? 50;
+            document.getElementById('ev-has-grade').checked = e.performance != null && e.performance !== '';
             updatePerfValue();
             document.getElementById('ev-obs').value = e.observations || '';
             if (e.nextWork && appState.repertoire.some(r => r.id === e.nextWork.repId)) {
@@ -2483,7 +3070,8 @@
             }
             document.getElementById('ev-piece-complete').checked = !!w.complete; togglePieceComplete();
             const cbs = Array.from(document.querySelectorAll('.ev-sec-checkbox')), rest = [];
-            String(w.sections || '').split(', ').filter(p => p && p !== 'Trabajada' && p !== 'Obra completa').forEach(p => {
+            const sectionNames = w.sectionNames || String(w.sections || '').split(', ');
+            sectionNames.filter(p => p && p !== 'Trabajada' && p !== 'Obra completa').forEach(p => {
                 const cb = cbs.find(c => c.value === p); if (cb) cb.checked = true; else rest.push(p);
             });
             document.getElementById('ev-sections-custom').value = rest.join(', ');
@@ -2555,8 +3143,14 @@
             del.innerHTML = '<i class="fas fa-trash mr-1"></i> Eliminar evento';
             del.onclick = () => { const id = document.getElementById('sch-id').value; if (id && deleteSchedule(id)) closeModal('modal-schedule'); };
             form.appendChild(del);
+            const closeClassButton = document.createElement('button');
+            closeClassButton.type = 'button';
+            closeClassButton.id = 'sch-close-class';
+            closeClassButton.className = 'hidden mt-3 w-full bg-purple-600 text-white rounded px-3 py-2 text-sm font-medium';
+            closeClassButton.textContent = 'Registrar clase';
+            form.appendChild(closeClassButton);
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') document.querySelectorAll('[id^="modal-"]:not(.hidden)').forEach(m => m.classList.add('hidden'));
+                if (e.key === 'Escape') document.querySelectorAll('[id^="modal-"]:not(.hidden)').forEach(m => closeModal(m.id));
             });
         }
 
@@ -2618,7 +3212,7 @@
             listContainer.innerHTML = '';
 
             let todaysEvents = visibleSchedule().filter(s => s.date === todayStr);
-            let pendingEvents = todaysEvents.filter(s => !appState.dailyValidations.ids.includes(s.id) && (s.type !== 'class' || appState.students.some(st => st.id === s.studentId)));
+            let pendingEvents = todaysEvents.filter(s => !s.closed && !appState.dailyValidations.ids.includes(s.id) && (s.type !== 'class' || appState.students.some(st => st.id === s.studentId)));
             pendingEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
             if (pendingEvents.length === 0) {
@@ -2667,14 +3261,8 @@
                             </div>
                         </div>
                         <div class="flex flex-wrap gap-2 lg:justify-end mt-4 xl:mt-0 items-center">
-                            <button onclick="quickAction('${student.id}', 'attendance')" class="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white border border-green-200 px-4 py-2.5 rounded-lg font-semibold transition text-sm shadow-sm">
-                                <i class="fas fa-user-check"></i> Asistencia
-                            </button>
-                            <button onclick="quickAction('${student.id}', 'eval')" class="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white border border-purple-200 px-4 py-2.5 rounded-lg font-semibold transition text-sm shadow-sm">
-                                <i class="fas fa-clipboard-list"></i> Actividad
-                            </button>
-                            <button onclick="validateEvent('${ev.id}')" class="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 bg-gray-50 text-gray-700 hover:bg-gray-800 hover:text-white border border-gray-300 px-5 py-2.5 rounded-lg font-bold transition text-sm shadow-sm">
-                                <i class="fas fa-check-double"></i> Validar
+                            <button type="button" onclick="openCloseClass('${ev.id}')" class="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 bg-purple-600 text-white hover:bg-purple-700 px-5 py-2.5 rounded-lg font-bold text-sm shadow-sm">
+                                <i class="fas fa-check-double"></i> Registrar clase
                             </button>
                         </div>
                     `;
@@ -2712,14 +3300,47 @@
             });
         }
 
-        function quickAction(studentId, action) {
-            appState.currentViewStudentId = studentId;
-            if (action === 'attendance') {
-                openAttendanceModal();
-            } else if (action === 'eval') {
-                openEvaluationModal();
-            }
+        function recordForClass(records, event) {
+            const linked = records.find(record => record.classEventId === event.id);
+            if (linked) return linked;
+            const sameDay = appState.schedule.filter(item => !item.cancelled && item.type === 'class' && item.studentId === event.studentId && item.date === event.date);
+            const unlinked = records.filter(record => !record.classEventId && record.date === event.date);
+            return sameDay.length === 1 && unlinked.length === 1 ? unlinked[0] : null;
         }
+
+        function openCloseClass(id) {
+            if (appState.readOnly) return false;
+            const event = appState.schedule.find(item => item.id === id && item.type === 'class' && !item.cancelled && !item.closed && item.date <= getTodayDate());
+            const student = event && appState.students.find(st => st.id === event.studentId);
+            if (!student) return false;
+            appState.currentViewStudentId = student.id;
+            const attendance = recordForClass(student.attendance, event);
+            const activity = recordForClass(student.evaluations.filter(item => item.type === 'weekly'), event);
+            if (activity) editEvaluation(activity.id);
+            else {
+                openEvaluationModal();
+                document.getElementById('ev-has-grade').checked = false;
+                updatePerfValue();
+            }
+            appState.closingEventId = id;
+            document.getElementById('ev-date').value = event.date;
+            document.getElementById('ev-date').readOnly = true;
+            document.getElementById('close-class-attendance').classList.remove('hidden');
+            document.getElementById('close-class-status').value = attendance?.status === 'absent' ? 'absent' : 'present';
+            document.getElementById('close-class-notes').value = attendance?.notes || '';
+            document.getElementById('evaluation-title').textContent = 'Registrar clase · ' + ([student.nombre, student.apellidos].filter(Boolean).join(' ') || student.name || 'Alumno');
+            document.getElementById('evaluation-submit').textContent = 'Guardar registro';
+            document.getElementById('close-class-status').focus();
+            return true;
+        }
+
+        function classScheduleAction(event) {
+            if (event.type !== 'class') return '';
+            if (event.closed) return '<span class="text-xs font-medium text-green-700 mr-2">Registrada</span>';
+            if (appState.readOnly || event.date > getTodayDate()) return '';
+            return `<button type="button" onclick="openCloseClass('${event.id}')" class="text-purple-700 hover:text-purple-800 px-2 py-1 text-sm">Registrar clase</button>`;
+        }
+
 
         function validateEvent(eventId) {
             if (!appState.dailyValidations.ids.includes(eventId)) {
@@ -2770,8 +3391,396 @@
             renderSchedule();
         }
 
+
+        function auditionOption(value, label, data) {
+            const option = new Option(label, value);
+            option.dataset.entry = JSON.stringify(data);
+            return option;
+        }
+
+        function selectedAuditionEntry(select) {
+            return JSON.parse(select.selectedOptions[0]?.dataset.entry || 'null');
+        }
+
+        function auditionPieceRow(saved = {}) {
+            const row = document.createElement('div');
+            row.className = 'audition-piece space-y-2 rounded border border-gray-200 bg-white p-2';
+            row.innerHTML = '<label class="block text-sm font-medium text-gray-700">Obra o libro<select class="audition-work mt-1 block w-full border rounded px-2 py-1" required></select></label>' +
+                '<label class="audition-lesson-field hidden text-sm font-medium text-gray-700">Lección<select class="audition-lesson mt-1 block w-full border rounded px-2 py-1" required disabled></select></label>' +
+                '<button type="button" class="audition-remove-piece text-sm text-red-600">Quitar obra o lección</button>';
+            const works = row.querySelector('.audition-work');
+            const lessons = row.querySelector('.audition-lesson');
+            const groups = [document.createElement('optgroup'), document.createElement('optgroup')];
+            groups[0].label = 'Obras'; groups[1].label = 'Libros';
+            const repertoire = appState.repertoire.filter(entry => entry.title).sort((a, b) => a.title.localeCompare(b.title, 'es'));
+            for (const entry of repertoire) {
+                const type = entry.type === 'libro' ? 'libro' : 'obra';
+                groups[type === 'libro' ? 1 : 0].append(auditionOption(entry.id, entry.title + (entry.author ? ' · ' + entry.author : ''), {
+                    repId: entry.id, type, title: entry.title, author: entry.author || ''
+                }));
+            }
+            works.append(new Option(repertoire.length ? 'Selecciona una obra o un libro' : 'Sin repertorio registrado', ''),
+                ...groups.filter(group => group.children.length));
+            if (saved.repId) {
+                const current = repertoire.find(entry => entry.id === saved.repId && (entry.type === 'libro' ? 'libro' : 'obra') === saved.type);
+                if (current) works.value = current.id;
+                else {
+                    works.append(auditionOption('previous:' + saved.repId, saved.title + ' (guardado en el programa)', {
+                        repId: saved.repId, type: saved.type, title: saved.title, author: saved.author || ''
+                    }));
+                    works.value = 'previous:' + saved.repId;
+                }
+            }
+
+            const updateLessons = (previous = {}) => {
+                const work = selectedAuditionEntry(works);
+                const isBook = work?.type === 'libro';
+                row.querySelector('.audition-lesson-field').classList.toggle('hidden', !isBook);
+                row.querySelector('.audition-lesson-field').classList.toggle('block', isBook);
+                lessons.disabled = !isBook;
+                lessons.replaceChildren();
+                if (!isBook) return;
+                const book = appState.repertoire.find(entry => entry.id === works.value && entry.type === 'libro');
+                const entries = (book?.contents || []).filter(entry => entry.title).map(entry => ({
+                    lessonId: entry.id || '', lessonTitle: entry.title, lessonPages: String(entry.pages || '')
+                }));
+                lessons.append(new Option(entries.length ? 'Selecciona una lección' : 'Este libro no tiene lecciones registradas', ''),
+                    ...entries.map((entry, index) => auditionOption(String(index), entry.lessonTitle + (entry.lessonPages ? ' · págs. ' + entry.lessonPages : ''), entry)));
+                if (!previous.lessonTitle) return;
+                const index = entries.findIndex(entry => previous.lessonId && entry.lessonId === previous.lessonId ||
+                    entry.lessonTitle === previous.lessonTitle && entry.lessonPages === previous.lessonPages);
+                if (index !== -1) lessons.value = String(index);
+                else {
+                    lessons.append(auditionOption('previous', previous.lessonTitle + ' (guardada en el programa)', {
+                        lessonId: previous.lessonId || '', lessonTitle: previous.lessonTitle, lessonPages: previous.lessonPages || ''
+                    }));
+                    lessons.value = 'previous';
+                }
+            };
+            updateLessons(saved);
+            works.addEventListener('change', () => updateLessons());
+            return row;
+        }
+
+
+        function updateAuditionAvailability() {
+            const selects = [...document.querySelectorAll('#sch-audition-participants .audition-student')];
+            const selected = new Set(selects.map(select => select.value).filter(Boolean));
+            for (const select of selects) {
+                for (const option of select.options) {
+                    option.disabled = !!option.value && option.value !== select.value && selected.has(option.value);
+                }
+            }
+            const pending = selects.filter(select => !select.value).length;
+            const available = appState.students.filter(student => !selected.has(student.id)).length;
+            const add = document.getElementById('sch-add-participant');
+            add.disabled = available <= pending;
+            add.classList.toggle('hidden', add.disabled);
+        }
+
+        function updateAuditionSummary(row) {
+            const student = selectedAuditionEntry(row.querySelector('.audition-student'));
+            row.querySelector('.audition-summary-name').textContent = student?.studentName || 'Sin alumno';
+            const pieces = [...row.querySelectorAll('.audition-piece')].map(piece => ({
+                work: selectedAuditionEntry(piece.querySelector('.audition-work')),
+                lesson: selectedAuditionEntry(piece.querySelector('.audition-lesson'))
+            })).filter(piece => piece.work);
+            const lessons = pieces.filter(piece => piece.lesson).length;
+            row.querySelector('.audition-works-label').textContent = lessons
+                ? (lessons === pieces.length ? (lessons === 1 ? 'Lección:' : 'Lecciones:') : 'Repertorio:')
+                : (pieces.length > 1 ? 'Obras:' : 'Obra:');
+            row.querySelector('.audition-summary-works').textContent = pieces.map(({ work, lesson }) =>
+                lesson ? lesson.lessonTitle + ' · ' + work.title : work.title).join('; ') || '—';
+            const minutes = auditionDuration(row.querySelector('.audition-duration').value);
+            const seconds = minutes == null ? NaN : Math.round(minutes * 60);
+            row.querySelector('.audition-summary-duration').textContent = Number.isNaN(seconds)
+                ? '—' : Math.floor(seconds / 60) + 'min ' + seconds % 60 + 'seg';
+        }
+
+        let auditionEndManual = false;
+
+        function updateAuditionEnd(totalHundredths, hasParticipants) {
+            const isAudition = document.getElementById('sch-type').value === 'audition';
+            const end = document.getElementById('sch-end');
+            const button = document.getElementById('sch-end-custom');
+            const help = document.getElementById('sch-end-help');
+            const canCalculate = isAudition && hasParticipants;
+            button.classList.toggle('hidden', !canCalculate);
+            end.readOnly = canCalculate && !auditionEndManual;
+            help.classList.toggle('hidden', !end.readOnly);
+            if (!canCalculate) return;
+            button.textContent = auditionEndManual ? 'Usar cálculo' : 'Personalizar';
+            if (auditionEndManual) return;
+
+            const start = document.getElementById('sch-start').value;
+            const duration = Math.ceil(totalHundredths / 100);
+            const finish = start && toMinutes(start) + duration;
+            end.value = '';
+            if (!duration) {
+                help.textContent = 'Añade una duración o pulsa Personalizar.';
+            } else if (!start) {
+                help.textContent = 'Indica la hora de inicio.';
+            } else if (finish >= 24 * 60) {
+                help.textContent = 'El cálculo supera la medianoche. Ajusta la duración o personaliza la hora de fin.';
+            } else {
+                end.value = pad2(Math.floor(finish / 60)) + ':' + pad2(finish % 60);
+                help.textContent = 'Calculada a partir de la duración del programa.';
+            }
+        }
+
+        document.getElementById('sch-end-custom').addEventListener('click', () => {
+            auditionEndManual = !auditionEndManual;
+            updateAuditionTotal();
+            if (auditionEndManual) document.getElementById('sch-end').focus();
+        });
+        document.getElementById('sch-start').addEventListener('input', updateAuditionTotal);
+        document.getElementById('sch-start').addEventListener('change', updateAuditionTotal);
+
+
+
+        function setupAuditionReordering() {
+            const list = document.getElementById('sch-audition-participants');
+            const scroll = document.getElementById('sch-audition-scroll');
+            let drag = null;
+
+            const placeAt = y => {
+                const row = drag.row;
+                const current = row.getBoundingClientRect();
+                if (y >= current.top && y <= current.bottom) return;
+                const target = [...list.children].find(item => {
+                    if (item === row) return false;
+                    const rect = item.getBoundingClientRect();
+                    return y < rect.top + rect.height / 2;
+                }) || null;
+                if (target === row.nextElementSibling) return;
+                list.insertBefore(row, target);
+                updateAuditionOrder();
+            };
+
+            const scrollWhileDragging = () => {
+                if (!drag?.active) return;
+                if (!scroll.offsetParent) { stop(); return; }
+                const { top, bottom } = scroll.getBoundingClientRect();
+                const before = scroll.scrollTop;
+                if (drag.y < top + 30) scroll.scrollTop -= 10;
+                else if (drag.y > bottom - 30) scroll.scrollTop += 10;
+                if (before !== scroll.scrollTop) placeAt(drag.y);
+                drag.frame = requestAnimationFrame(scrollWhileDragging);
+            };
+
+            const stop = () => {
+                if (!drag) return;
+                const { row, id, timer, frame } = drag;
+                drag = null;
+                clearTimeout(timer);
+                cancelAnimationFrame(frame);
+                row.classList.remove('audition-dragging');
+                if (scroll.hasPointerCapture(id)) scroll.releasePointerCapture(id);
+            };
+
+            scroll.addEventListener('pointerdown', event => {
+                if (drag || event.button !== 0 || list.children.length < 2) return;
+                const grip = event.target.closest('.audition-grip');
+                const body = event.target.closest('.audition-card-text');
+                const row = (grip || (event.pointerType === 'mouse' && body))?.closest('.audition-participant');
+                if (!row) return;
+                drag = { row, id: event.pointerId, x: event.clientX, y: event.clientY, active: false };
+                scroll.setPointerCapture(event.pointerId);
+                drag.timer = setTimeout(() => {
+                    if (!drag || !row.isConnected) { stop(); return; }
+                    drag.active = true;
+                    row.classList.add('audition-dragging');
+                    scrollWhileDragging();
+                }, 300);
+            });
+            scroll.addEventListener('pointermove', event => {
+                if (!drag || event.pointerId !== drag.id) return;
+                if (!drag.active) {
+                    if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 8) stop();
+                    return;
+                }
+                drag.y = event.clientY;
+                placeAt(drag.y);
+            });
+            for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+                scroll.addEventListener(event, pointer => { if (pointer.pointerId === drag?.id) stop(); });
+            }
+            scroll.addEventListener('contextmenu', event => {
+                if (event.target.closest('.audition-grip') || drag?.active) event.preventDefault();
+            });
+            scroll.addEventListener('keydown', event => {
+                const grip = event.target.closest('.audition-grip');
+                if (!grip || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+                const row = grip.closest('.audition-participant');
+                const up = event.key === 'ArrowUp';
+                const neighbor = up ? row.previousElementSibling : row.nextElementSibling;
+                if (!neighbor) return;
+                event.preventDefault();
+                list.insertBefore(row, up ? neighbor : neighbor.nextElementSibling);
+                updateAuditionOrder();
+                grip.focus({ preventScroll: true });
+                row.scrollIntoView({ block: 'nearest' });
+            });
+        }
+
+        setupAuditionReordering();
+
+
+        function updateAuditionOrder() {
+            const rows = document.getElementById('sch-audition-participants').children;
+            Array.from(rows).forEach((row, index) => {
+                row.querySelector('.audition-position').textContent = (index + 1) + '.';
+                row.querySelector('.audition-grip').classList.toggle('hidden', rows.length < 2);
+            });
+            document.getElementById('sch-audition-scroll').classList.toggle('hidden', rows.length === 0);
+            updateAuditionAvailability();
+        }
+
+        function auditionDuration(raw) {
+            const text = raw.trim();
+            if (!text) return null;
+            const minutes = Number(text.replace(',', '.'));
+            return /^\d+(?:[.,]\d{1,2})?$/.test(text) && Number.isSafeInteger(Math.round(minutes * 100)) ? minutes : NaN;
+        }
+
+        function updateAuditionTotal() {
+            const rows = document.getElementById('sch-audition-participants').children;
+            let total = 0, missing = 0, valid = 0;
+            for (const row of rows) {
+                const input = row.querySelector('.audition-duration');
+                const duration = auditionDuration(input.value);
+                input.setCustomValidity(Number.isNaN(duration) ? 'Introduce los minutos con un máximo de dos decimales.' : '');
+                if (!row.querySelector('.audition-student').value) continue;
+                if (duration == null || Number.isNaN(duration)) missing++;
+                else { total += Math.round(duration * 100); valid++; }
+            }
+            const hasParticipants = valid + missing > 0;
+            document.getElementById('sch-audition-duration').classList.toggle('hidden', !hasParticipants);
+            const duration = valid ? (total / 100).toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' min' : '—';
+            document.getElementById('sch-audition-total').textContent = duration + (missing ? ' · ' + missing + ' sin duración indicada' : '');
+            updateAuditionEnd(total, hasParticipants);
+        }
+
+        function addAuditionParticipant(saved = {}) {
+            const row = document.createElement('li');
+            row.className = 'audition-participant min-w-0 rounded border border-gray-200 bg-white p-2 space-y-2';
+            row.innerHTML = '<div class="audition-card-head text-sm text-gray-800">' +
+                '<button type="button" class="audition-grip hidden" aria-label="Reordenar participante. Usa las flechas arriba y abajo" title="Mantén pulsado y arrastra"><span aria-hidden="true">⋮⋮</span></button>' +
+                '<div class="audition-card-text space-y-1">' +
+                '<p><b><span class="audition-position"></span> Nombre:</b> <span class="audition-summary-name"></span></p>' +
+                '<p><b class="audition-works-label">Obra:</b> <span class="audition-summary-works"></span></p>' +
+                '<p><b>Duración:</b> <span class="audition-summary-duration"></span></p></div>' +
+                '<div class="audition-actions">' +
+                '<button type="button" class="audition-edit audition-action text-gray-400 hover:text-blue-600" aria-expanded="false" aria-label="Editar participante" title="Editar"><i class="fas fa-edit" aria-hidden="true"></i></button>' +
+                '<button type="button" class="audition-remove audition-action text-gray-400 hover:text-red-600" aria-label="Eliminar participante" title="Eliminar"><i class="fas fa-trash" aria-hidden="true"></i></button></div></div>' +
+                '<div class="audition-editor hidden space-y-2 rounded border border-gray-200 bg-gray-50 p-2">' +
+                '<label class="block text-sm font-medium text-gray-700">Alumno<select class="audition-student mt-1 block w-full border rounded px-2 py-1" required></select></label>' +
+                '<div class="audition-pieces space-y-2"></div>' +
+                '<button type="button" class="audition-add-piece text-sm font-medium text-blue-700">Añadir obra o lección</button>' +
+                '<label class="block text-sm font-medium text-gray-700">Duración aproximada (min, opcional)<input type="text" inputmode="decimal" placeholder="Ej.: 3,5" class="audition-duration mt-1 block w-full border rounded px-2 py-1"></label></div>';
+            const edit = row.querySelector('.audition-edit');
+            const editor = row.querySelector('.audition-editor');
+            const setEditing = open => {
+                editor.classList.toggle('hidden', !open);
+                edit.setAttribute('aria-expanded', String(open));
+                const label = open ? 'Ocultar edición' : 'Editar';
+                edit.setAttribute('aria-label', label + ' del participante');
+                edit.title = label;
+            };
+            edit.onclick = () => setEditing(editor.classList.contains('hidden'));
+            row.addEventListener('invalid', () => setEditing(true), true);
+            if (!saved.studentId) setEditing(true);
+            const studentSelect = row.querySelector('.audition-student');
+            const students = [...appState.students].sort((a, b) => getFullName(a).localeCompare(getFullName(b), 'es'));
+            studentSelect.append(new Option(students.length ? 'Selecciona un alumno' : 'Sin alumnos registrados', ''),
+                ...students.map(student => auditionOption(student.id, getFullName(student), { studentId: student.id, studentName: getFullName(student) })));
+            if (saved.studentId) {
+                if (!students.some(student => student.id === saved.studentId)) {
+                    studentSelect.append(auditionOption(saved.studentId, saved.studentName + ' (guardado en el programa)', {
+                        studentId: saved.studentId, studentName: saved.studentName
+                    }));
+                }
+                studentSelect.value = saved.studentId;
+            }
+
+            const pieces = row.querySelector('.audition-pieces');
+            const updatePieceButtons = () => {
+                pieces.querySelectorAll('.audition-remove-piece').forEach(button => button.classList.toggle('hidden', pieces.children.length === 1));
+            };
+            const addPiece = (entry = {}) => {
+                const piece = auditionPieceRow(entry);
+                pieces.appendChild(piece);
+                piece.querySelector('.audition-remove-piece').onclick = () => {
+                    piece.remove();
+                    updatePieceButtons();
+                    updateAuditionSummary(row);
+                    row.querySelector('.audition-add-piece').focus();
+                };
+                updatePieceButtons();
+                return piece;
+            };
+            (saved.repertoire?.length ? saved.repertoire : [{}]).forEach(addPiece);
+            row.querySelector('.audition-add-piece').onclick = () => addPiece().querySelector('select').focus();
+            const duration = row.querySelector('.audition-duration');
+            duration.value = saved.durationMinutes == null ? '' : String(saved.durationMinutes).replace('.', ',');
+            row.addEventListener('input', event => {
+                if (event.target === duration) updateAuditionTotal();
+                updateAuditionSummary(row);
+            });
+            row.addEventListener('change', event => {
+                if (event.target === studentSelect) {
+                    updateAuditionAvailability();
+                    updateAuditionTotal();
+                }
+                updateAuditionSummary(row);
+            });
+
+            const list = document.getElementById('sch-audition-participants');
+            row.querySelector('.audition-remove').onclick = () => {
+                row.remove();
+                updateAuditionOrder();
+                updateAuditionTotal();
+                document.getElementById('sch-add-participant').focus();
+            };
+            list.appendChild(row);
+            updateAuditionSummary(row);
+            return studentSelect;
+        }
+
+        function setAuditionProgram(program = []) {
+            const list = document.getElementById('sch-audition-participants');
+            list.replaceChildren();
+            (program || []).forEach(addAuditionParticipant);
+            updateAuditionOrder();
+            updateAuditionTotal();
+        }
+
+        document.getElementById('sch-add-participant').addEventListener('click', () => {
+            if (document.getElementById('sch-add-participant').disabled) return;
+            const student = addAuditionParticipant();
+            updateAuditionOrder();
+            updateAuditionTotal();
+            student.focus();
+        });
+
+        function readAuditionProgram() {
+            return Array.from(document.getElementById('sch-audition-participants').children, row => ({
+                ...selectedAuditionEntry(row.querySelector('.audition-student')),
+                repertoire: Array.from(row.querySelector('.audition-pieces').children, piece => ({
+                    ...selectedAuditionEntry(piece.querySelector('.audition-work')),
+                    ...selectedAuditionEntry(piece.querySelector('.audition-lesson'))
+                })),
+                durationMinutes: auditionDuration(row.querySelector('.audition-duration').value)
+            }));
+        }
+
+
         function toggleScheduleStudentSel() {
             const type = document.getElementById('sch-type').value;
+            const program = document.getElementById('sch-audition-program');
+            program.classList.toggle('hidden', type !== 'audition');
+            program.disabled = type !== 'audition';
+            updateAuditionTotal();
             const stuDiv = document.getElementById('sch-student-container');
             const titleDiv = document.getElementById('sch-title-container');
             
@@ -2791,12 +3800,22 @@
         document.getElementById('form-schedule').addEventListener('submit', (e) => {
             e.preventDefault();
             const id = document.getElementById('sch-id').value;
+            if (appState.readOnly || appState.schedule.some(event => event.id === id && event.type === 'class')) return;
             const type = document.getElementById('sch-type').value;
+            if (type === 'audition') {
+                updateAuditionTotal();
+                if (!e.currentTarget.reportValidity()) return;
+                if (!document.getElementById('sch-end').value) {
+                    showToast(document.getElementById('sch-end-help').textContent, 'warning');
+                    return;
+                }
+            }
             const studentId = type === 'class' ? document.getElementById('sch-student-id').value : null;
             const title = type === 'class' ? null : document.getElementById('sch-title').value;
             
             const schData = {
                 id: id || generateId(),
+                manual: true,
                 type: type,
                 studentId: studentId,
                 title: title,
@@ -2804,28 +3823,33 @@
                 startTime: document.getElementById('sch-start').value,
                 endTime: document.getElementById('sch-end').value
             };
+            if (type === 'audition') {
+                schData.program = readAuditionProgram();
+                schData.endTimeMode = document.getElementById('sch-end').readOnly ? 'automatic' : 'manual';
+            }
 
             if(schData.startTime >= schData.endTime) {
                 showToast('La hora de inicio debe ser anterior a la hora de fin.', 'warning');
                 return;
             }
 
-            if (id) {
-                const index = appState.schedule.findIndex(s => s.id === id);
-                if (index > -1) {
-                    const old = appState.schedule[index];
-                    if (old.genKey) { schData.genKey = old.genKey; schData.edited = true; }
-                    appState.schedule[index] = schData;
-                } else { appState.schedule.push(schData); }
-                showToast('Evento actualizado', 'success');
-            } else {
-                appState.schedule.push(schData);
-                showToast('Evento añadido', 'success');
+            const previous = appState.schedule;
+            const old = id && previous.find(event => event.id === id);
+            if (old?.closed && (old.date !== schData.date || old.type !== schData.type || old.studentId !== schData.studentId)) {
+                showToast('La fecha, el alumno y el tipo de una clase registrada no se pueden cambiar desde el horario.', 'warning');
+                return;
             }
-
-            saveUserData();
+            if (old?.closed) schData.closed = true;
+            if (old?.genKey) { schData.genKey = old.genKey; schData.edited = true; }
+            appState.schedule = old ? previous.map(event => event === old ? schData : event) : [...previous, schData];
+            if (!saveUserData()) {
+                appState.schedule = previous;
+                packStore();
+                return;
+            }
             closeModal('modal-schedule');
             renderSchedule();
+            showToast(id ? 'Evento actualizado' : 'Evento añadido', 'success');
         });
 
         function renderSchedule() {
@@ -2935,24 +3959,22 @@
                     const heightPx = (Math.min(endOffset, END_HOUR - START_HOUR + 1) - clampedStartOffset) * PIXELS_PER_HOUR;
                     
                     let bgColor = 'bg-blue-100 hover:bg-blue-200 text-blue-900 border-blue-500';
-                    let titleDisplay = ev.title;
+                    const student = ev.type === 'class' && appState.students.find(s => s.id === ev.studentId);
+                    const titleDisplay = ev.type === 'class' ? (student ? getFullName(student) : 'Clase con alumno') : ev.title;
                     let icon = '<i class="fas fa-user-graduate text-[10px] mr-1"></i>';
                     
-                    if(ev.type === 'class') {
-                        const student = appState.students.find(s => s.id === ev.studentId);
-                        titleDisplay = student ? getFullName(student) : '(Alumno)';
-                    } else if (ev.type === 'office') {
+                    if (ev.type === 'office') {
                         bgColor = 'bg-yellow-100 hover:bg-yellow-200 text-yellow-900 border-yellow-500'; icon = '<i class="fas fa-briefcase text-[10px] mr-1"></i>';
                     } else if (ev.type === 'rehearsal') { 
                         bgColor = 'bg-purple-100 hover:bg-purple-200 text-purple-900 border-purple-500'; icon = '<i class="fas fa-music text-[10px] mr-1"></i>';
                     } else if (ev.type === 'audition') { 
                         bgColor = 'bg-orange-100 hover:bg-orange-200 text-orange-900 border-orange-500'; icon = '<i class="fas fa-star text-[10px] mr-1"></i>';
-                    } else {
+                    } else if (ev.type !== 'class') {
                         bgColor = 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-400'; icon = '<i class="fas fa-tasks text-[10px] mr-1"></i>';
                     }
 
                     const evBlock = document.createElement('div');
-                    evBlock.className = `absolute left-1 right-1 rounded border-l-4 p-1.5 overflow-hidden shadow-sm transition cursor-pointer flex flex-col justify-start text-xs ${bgColor} z-10`;
+                    evBlock.className = `absolute left-1 right-1 rounded border-l-4 overflow-hidden shadow-sm transition flex text-xs ${bgColor} z-10`;
                     evBlock.style.top = `${topPx}px`;
                     const lay = layout.get(ev.id) || { col: 0, cols: 1 };
                     evBlock.style.right = 'auto';
@@ -2960,16 +3982,40 @@
                     evBlock.style.width = `calc(${100 / lay.cols}% - 4px)`;
                     evBlock.style.height = `${Math.max(20, heightPx - 2)}px`;
                     
-                    evBlock.onclick = (e) => { e.stopPropagation(); editSchedule(ev.id); };
-
-                    evBlock.innerHTML = `
-                        <div class="font-bold leading-tight truncate">${icon}${esc(titleDisplay)}</div>
-                        <div class="opacity-75 truncate mt-0.5 text-[10px]">${ev.startTime} - ${ev.endTime}</div>
+                    const primary = document.createElement('button');
+                    primary.type = 'button';
+                    primary.className = 'schedule-week-primary';
+                    primary.title = student ? 'Ver ficha de ' + titleDisplay : (titleDisplay || 'Editar evento');
+                    primary.setAttribute('aria-label', primary.title);
+                    primary.innerHTML = `
+                        <span class="block font-bold leading-tight truncate">${icon}${ev.closed ? '✓ ' : ''}${esc(titleDisplay)}</span>
+                        <span class="block opacity-75 truncate text-[10px]">${esc(ev.startTime)} - ${esc(ev.endTime)}</span>
                     `;
+                    primary.onclick = () => student ? viewStudent(student.id, 'schedule') : editSchedule(ev.id);
+                    evBlock.appendChild(primary);
+
+                    if (student && !appState.readOnly) {
+                        const edit = document.createElement('button');
+                        edit.type = 'button';
+                        edit.className = 'schedule-week-edit hover:bg-white';
+                        edit.title = 'Editar clase de ' + titleDisplay;
+                        edit.setAttribute('aria-label', edit.title);
+                        edit.innerHTML = '<i class="fas fa-edit" aria-hidden="true"></i>';
+                        edit.onclick = () => editSchedule(ev.id);
+                        evBlock.appendChild(edit);
+                    }
                     col.appendChild(evBlock);
                 });
                 colsContainer.appendChild(col);
             }
+        }
+
+        function scheduleEventTitle(event) {
+            if (event.type !== 'class') return esc(event.title);
+            const student = appState.students.find(s => s.id === event.studentId);
+            if (!student) return 'Clase con alumno';
+            const name = esc(getFullName(student));
+            return `<button type="button" data-student-id="${esc(student.id)}" onclick="viewStudent(this.dataset.studentId, 'schedule')" class="text-left text-blue-600 hover:underline break-words" aria-label="Ver ficha de ${name}">Clase de ${name}</button>`;
         }
 
         function renderScheduleDayView() {
@@ -2991,12 +4037,8 @@
             }
 
             events.forEach(ev => {
-                let titleDisplay = ev.title;
                 let badge = '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-semibold">Clase</span>';
-                if(ev.type === 'class') {
-                    const student = appState.students.find(s => s.id === ev.studentId);
-                    titleDisplay = student ? `Clase de ${esc(getFullName(student))}` : 'Clase con Alumno';
-                } else if(ev.type === 'office') {
+                if(ev.type === 'office') {
                     badge = '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded font-semibold">Oficina</span>';
                 } else if(ev.type === 'rehearsal') {
                     badge = '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded font-semibold">Ensayo</span>';
@@ -3007,13 +4049,14 @@
                 container.innerHTML += `
                     <div class="day-ev p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
                         <div class="ev-title flex flex-wrap items-center gap-2 min-w-0">
-                            <h4 class="font-bold text-gray-800 text-base break-words">${esc(titleDisplay)}</h4>
+                            <h4 class="font-bold text-gray-800 text-base break-words">${scheduleEventTitle(ev)}</h4>
                             ${badge}
                         </div>
                         <div class="ev-time bg-blue-600 text-white font-bold px-3 py-2 rounded text-sm text-center whitespace-nowrap">
                             ${ev.startTime} - ${ev.endTime}
                         </div>
                         <div class="ev-actions flex items-center">
+                            ${classScheduleAction(ev)}
                             <button type="button" onclick="editSchedule('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-2" title="Editar"><i class="fas fa-edit"></i></button><button type="button" onclick="deleteSchedule('${ev.id}')" class="text-red-400 hover:text-red-600 p-2" title="Eliminar"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
@@ -3042,15 +4085,11 @@
                 const dateFormatted = `${dayNames[i]} ${dayDate.getDate()} ${monthNames[dayDate.getMonth()]}`;
 
                 let eventsHtml = dayEvents.map(ev => {
-                    let titleDisplay = ev.title;
-                    if(ev.type === 'class') {
-                        const student = appState.students.find(s => s.id === ev.studentId);
-                        titleDisplay = student ? `Clase de ${esc(getFullName(student))}` : 'Clase con Alumno';
-                    }
                     return `
                         <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-none">
                             <span class="text-sm font-semibold text-gray-700">De ${ev.startTime} a ${ev.endTime}:</span>
-                            <span class="text-sm text-gray-900 font-medium ml-2 flex-1">${esc(titleDisplay)}</span>
+                            <span class="text-sm text-gray-900 font-medium ml-2 flex-1">${scheduleEventTitle(ev)}</span>
+                            ${classScheduleAction(ev)}
                             <button onclick="editSchedule('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-2" title="Editar"><i class="fas fa-edit"></i></button><button onclick="deleteSchedule('${ev.id}')" class="text-gray-400 hover:text-red-600 text-xs ml-2" title="Eliminar"><i class="fas fa-trash"></i></button>
                         </div>
                     `;
@@ -3074,12 +4113,23 @@
         }
 
         function deleteSchedule(id) {
-            if (!confirm('¿Eliminar este evento del horario?')) return false;
-            appState.schedule = appState.schedule.filter(s => s.id !== id);
-            saveUserData();
+            const event = appState.schedule.find(s => s.id === id);
+            if (!event) return false;
+            const recurring = !!event.genKey;
+            const question = recurring ? '¿Cancelar solo esta clase? El horario semanal del alumno se mantiene.' : '¿Eliminar este evento del horario?';
+            if (!confirm(question)) return false;
+            const previous = appState.schedule;
+            appState.schedule = recurring
+                ? previous.map(s => s === event ? { ...event, cancelled: true } : s)
+                : previous.filter(s => s !== event);
+            if (!saveUserData()) {
+                appState.schedule = previous;
+                packStore();
+                return false;
+            }
             renderSchedule();
             renderHome();
-            showToast('Evento eliminado del horario', 'info');
+            showToast(recurring ? 'Clase cancelada' : 'Evento eliminado del horario', 'info');
             return true;
         }
 
@@ -3169,32 +4219,35 @@
             renderSchedule();
             
             if (appState.currentViewStudentId && id) {
-                viewStudent(appState.currentViewStudentId);
+                viewStudent(appState.currentViewStudentId, appState.studentReturnView);
             }
         });
 
-        function generateStudentSchedule(student, silent = false) {
-            const { courseStart, courseEnd, holidays } = appState.settings;
-            if (!courseStart || !courseEnd || !student.mainClassStart || !student.mainClassEnd) return;
+        function generateStudentSchedule(student, silent = false, state = appState) {
+            const { courseStart, courseEnd } = state.settings;
             const today = getTodayDate();
-            const holidaySet = new Set((holidays || []).map(h => typeof h === 'string' ? h : h.date));
             const desired = new Set();
-            const end = parseLocalDate(courseEnd);
-            for (const c = parseLocalDate(courseStart < today ? today : courseStart); c <= end; c.setDate(c.getDate() + 1)) {
-                if (c.getDay() === student.mainClassDay) { const d = toDateKey(c); if (isTeachingDay(d)) desired.add(d); }
+            if (courseStart && courseEnd && student.mainClassStart && student.mainClassEnd) {
+                const end = parseLocalDate(courseEnd);
+                for (const date = parseLocalDate(courseStart < today ? today : courseStart); date <= end; date.setDate(date.getDate() + 1)) {
+                    const key = toDateKey(date);
+                    if (date.getDay() === student.mainClassDay && isTeachingDay(key, state.settings)) desired.add(key);
+                }
             }
-            const isAuto = (e) => e.type === 'class' && e.studentId === student.id && e.genKey && !e.edited && e.date >= today;
-            appState.schedule = appState.schedule.filter(e => !(isAuto(e) && !desired.has(e.date)));
-            appState.schedule.forEach(e => { if (isAuto(e)) { e.startTime = student.mainClassStart; e.endTime = student.mainClassEnd; } });
-            const keys = new Set(appState.schedule.filter(e => e.type === 'class' && e.studentId === student.id).map(e => e.genKey));
+            const isAuto = e => e.type === 'class' && e.studentId === student.id && e.genKey && !e.edited && !e.cancelled && !e.closed && e.date >= today;
+            state.schedule = state.schedule.filter(e => !isAuto(e) || desired.has(e.date));
+            state.schedule.forEach(e => {
+                if (isAuto(e)) { e.startTime = student.mainClassStart; e.endTime = student.mainClassEnd; }
+            });
+            const keys = new Set(state.schedule.map(e => e.genKey).filter(Boolean));
             let added = 0;
-            desired.forEach(d => {
-                const key = `${student.id}_${d}`;
+            desired.forEach(date => {
+                const key = student.id + '_' + date;
                 if (keys.has(key)) return;
-                appState.schedule.push({ id: generateId(), type: 'class', studentId: student.id, title: null, date: d, startTime: student.mainClassStart, endTime: student.mainClassEnd, genKey: key });
+                state.schedule.push({ id: generateId(), type: 'class', studentId: student.id, title: null, date, startTime: student.mainClassStart, endTime: student.mainClassEnd, genKey: key });
                 added++;
             });
-            if (!silent && added > 0) showToast(`Se han añadido ${added} clases al horario.`, 'info');
+            if (!silent && added > 0) showToast('Se han añadido ' + added + ' clases al horario.', 'info');
         }
 
         function regenerateAllSchedules() {
@@ -3355,58 +4408,69 @@
             const st = currentStudent(); if (st) renderStudentSubLists(st);
         }
 
-        function viewStudent(id) {
+        function viewStudent(id, returnView = 'students') {
             const student = appState.students.find(s => s.id === id);
             if(!student) return;
             appState.currentViewStudentId = id;
+            appState.studentReturnView = returnView;
+            document.getElementById('student-back-label').textContent = returnView === 'schedule' ? 'Volver al calendario' : 'Volver a Alumnos';
             if (appState.weeklyTrimesterFor !== id) { appState.weeklyTrimesterFor = id; appState.weeklyTrimester = appState.attTrimester = defaultTrimester(); }
             
             document.getElementById('detail-student-name').textContent = getFullName(student);
             
-            const daysMap = {'1': 'Lunes', '2': 'Martes', '3': 'Miércoles', '4': 'Jueves', '5': 'Viernes', '6': 'Sábado', '0': 'Domingo'};
-            
-            let allSubjectsRows = `
-                <tr>
-                    <td class="px-3 py-2 text-sm text-gray-900 font-medium">${esc(student.subject)} <span class="text-xs text-blue-600 font-bold ml-1">(Principal)</span></td>
-                    <td class="px-3 py-2 text-sm text-gray-500">${esc(student.course || '-')}</td>
-                    <td class="px-3 py-2 text-sm text-gray-500">Tú</td>
-                    <td class="px-3 py-2 text-sm text-gray-500">${student.mainClassDay !== undefined ? daysMap[student.mainClassDay] : '-'}</td>
-                    <td class="px-3 py-2 text-sm text-gray-500">${esc(student.mainClassStart || '-')} - ${esc(student.mainClassEnd || '-')}</td>
-                </tr>
-            `;
 
-            if(student.enrolledSubjects && student.enrolledSubjects.length > 0) {
-                allSubjectsRows += student.enrolledSubjects.map(es => `
-                    <tr>
-                        <td class="px-3 py-2 text-sm text-gray-900">${esc(es.subject)}</td>
-                        <td class="px-3 py-2 text-sm text-gray-500">${esc(es.course || '-')}</td>
-                        <td class="px-3 py-2 text-sm text-gray-500">${esc(es.professor || '-')}</td>
-                        <td class="px-3 py-2 text-sm text-gray-500">${es.day ? daysMap[es.day] : '-'}</td>
-                        <td class="px-3 py-2 text-sm text-gray-500">${es.startTime || '-'} - ${es.endTime || '-'}</td>
-                    </tr>
-                `).join('');
-            }
-            
-            let subjectsHtml = `
-                <div class="col-span-1 md:col-span-2 mt-4 border-t pt-4">
-                    <span class="text-gray-500 text-sm block mb-2 font-bold">Asignaturas Matriculadas</span>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 border">
+            const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const subjects = [{
+                subject: student.subject, course: student.course, professor: 'Tú', principal: true,
+                day: student.mainClassDay, startTime: student.mainClassStart, endTime: student.mainClassEnd
+            }, ...(student.enrolledSubjects || [])].map(subject => ({
+                ...subject,
+                weekday: subject.day == null || subject.day === '' ? '' : days[Number(subject.day)] || '',
+                time: subject.startTime && subject.endTime ? subject.startTime + '–' + subject.endTime : ''
+            }));
+
+            const subjectsHtml = `
+                <section class="student-subjects col-span-1 md:col-span-2 mt-4 border-t pt-4">
+                    <h3 class="text-gray-500 text-sm mb-2 font-bold">Asignaturas matriculadas</h3>
+                    <ul class="student-subjects-cards" role="list">
+                        ${subjects.map(subject => {
+                            const details = [subject.course, subject.professor].filter(Boolean).join(' · ');
+                            const partialTime = subject.startTime ? 'Inicio a las ' + subject.startTime
+                                : subject.endTime ? 'Fin a las ' + subject.endTime : '';
+                            const schedule = subject.time
+                                ? (subject.weekday ? subject.weekday + ', ' + subject.time : subject.time + ' · Día sin asignar')
+                                : [subject.weekday, 'Horario sin asignar', partialTime].filter(Boolean).join(' · ');
+                            return `
+                                <li class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <h4 class="font-semibold text-gray-900">${esc(subject.subject || 'Asignatura')}${subject.principal ? ' <span class="text-sm font-medium text-blue-600">· Principal</span>' : ''}</h4>
+                                    ${details ? `<p class="text-sm text-gray-600 mt-1">${esc(details)}</p>` : ''}
+                                    <p class="text-sm font-semibold text-gray-800 mt-2">${esc(schedule)}</p>
+                                </li>
+                            `;
+                        }).join('')}
+                    </ul>
+                    <div class="student-subjects-table">
+                        <table class="w-full divide-y divide-gray-200 border">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Asignatura</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Curso</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Profesor</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Día</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Horario</th>
+                                    ${['Asignatura', 'Curso', 'Profesor', 'Día', 'Horario'].map(label =>
+                                        `<th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500">${label}</th>`).join('')}
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                ${allSubjectsRows}
+                                ${subjects.map(subject => `
+                                    <tr>
+                                        <td class="px-3 py-2 text-sm text-gray-900">${esc(subject.subject || 'Asignatura')}${subject.principal ? ' <span class="text-xs text-blue-600 font-bold">(Principal)</span>' : ''}</td>
+                                        <td class="px-3 py-2 text-sm text-gray-500">${esc(subject.course || '—')}</td>
+                                        <td class="px-3 py-2 text-sm text-gray-500">${esc(subject.professor || '—')}</td>
+                                        <td class="px-3 py-2 text-sm text-gray-500">${esc(subject.weekday || '—')}</td>
+                                        <td class="px-3 py-2 text-sm text-gray-500">${esc(subject.time || [subject.startTime || '—', subject.endTime || '—'].join(' – '))}</td>
+                                    </tr>
+                                `).join('')}
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </section>
             `;
 
             const infoDiv = document.getElementById('student-info-content');
@@ -3483,6 +4547,7 @@
                 const attId = document.getElementById('att-id').value;
                 const attList = appState.students[sIndex].attendance;
                 const attIdx = attId ? attList.findIndex(x => x.id === attId) : -1;
+                if (attIdx > -1 && attList[attIdx].classEventId) attData.classEventId = attList[attIdx].classEventId;
                 if (attIdx > -1) { attData.id = attId; attList[attIdx] = attData; } else { attList.push(attData); }
                 appState.students[sIndex].attendance.sort((a,b) => new Date(b.date) - new Date(a.date));
                 saveUserData();
@@ -3495,12 +4560,19 @@
 
         function openAttendanceModal() {
             document.getElementById('form-attendance').reset(); document.getElementById('att-id').value = '';
+            document.querySelector('#att-status option[value="changed"]')?.remove();
+            document.getElementById('att-status').value = 'present';
             const attDate = document.getElementById('att-date');
             if(attDate) attDate.value = getTodayDate();
             openModal('modal-attendance');
         }
 
         function openEvaluationModal() {
+            appState.closingEventId = null;
+            document.getElementById('ev-date').readOnly = false;
+            document.getElementById('close-class-attendance').classList.add('hidden');
+            document.getElementById('evaluation-title').textContent = 'Registrar Trabajo Semanal / Clase';
+            document.getElementById('evaluation-submit').textContent = 'Guardar Registro';
             document.getElementById('form-evaluation').reset(); document.getElementById('ev-id').value = ''; document.getElementById('ev-pages-worked').dataset.book = ''; fillNextRepOptions(); 
             const select = document.getElementById('ev-rep-select');
             if(select) {
@@ -3546,25 +4618,15 @@
                     bookField.classList.add('hidden');
                     pieceField.classList.remove('hidden');
 
-                    const container = document.getElementById('ev-sections-checkboxes');
-                    container.innerHTML = '';
-                    if(repItem.sections && repItem.sections.trim() !== '') {
-                        const sectionsList = repItem.sections.split(',').map(s => s.trim()).filter(Boolean);
-                        if(sectionsList.length > 0) {
-                            sectionsList.forEach((sec, idx) => {
-                                container.innerHTML += `
-                                    <label class="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer">
-                                        <input type="checkbox" value="${esc(sec)}" class="ev-sec-checkbox rounded border-gray-300 text-blue-600">
-                                        <span>${esc(sec)}</span>
-                                    </label>
-                                `;
-                            });
-                        } else {
-                            container.innerHTML = '<span class="text-xs text-gray-400 italic">No hay secciones predefinidas. Añade anotación abajo.</span>';
-                        }
-                    } else {
-                        container.innerHTML = '<span class="text-xs text-gray-400 italic">No hay secciones predefinidas. Añade anotación abajo.</span>';
-                    }
+                    const sections = readWorkSections(repItem.sections);
+                    document.getElementById('ev-sections-checkboxes').innerHTML = sections.length
+                        ? sections.map(sec => `
+                            <label class="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer">
+                                <input type="checkbox" value="${esc(sec.title)}" class="ev-sec-checkbox rounded border-gray-300 text-blue-600">
+                                <span>${sectionLabelHtml(sec)}</span>
+                            </label>
+                        `).join('')
+                        : '<span class="text-xs text-gray-400 italic">No hay secciones predefinidas. Añade anotación abajo.</span>';
                 }
             }
         }
@@ -3580,9 +4642,10 @@
         }
 
         function updatePerfValue() {
-            const val = document.getElementById('ev-performance').value;
-            document.getElementById('ev-perf-val').textContent = val;
-            document.getElementById('ev-perf-grade').textContent = (val / 10).toFixed(1);
+            const input = document.getElementById('ev-performance');
+            input.disabled = !document.getElementById('ev-has-grade').checked;
+            document.getElementById('ev-perf-val').textContent = input.disabled ? '—' : input.value;
+            document.getElementById('ev-perf-grade').textContent = input.disabled ? '—' : (input.value / 10).toFixed(1);
         }
 
         document.getElementById('form-evaluation').addEventListener('submit', (e) => {
@@ -3591,6 +4654,14 @@
             if (nextWork === false) return;
             const sIndex = appState.students.findIndex(s => s.id === appState.currentViewStudentId);
             if(sIndex > -1) {
+                const student = appState.students[sIndex];
+                const event = appState.schedule.find(item => item.id === appState.closingEventId);
+                if (appState.readOnly || (appState.closingEventId && (!event || event.cancelled || event.closed || event.studentId !== student.id))) return;
+                const previous = {
+                    attendance: clone(student.attendance),
+                    evaluations: clone(student.evaluations),
+                    completedRepertoire: clone(student.completedRepertoire)
+                };
                 const repId = document.getElementById('ev-rep-select').value;
                 let repWorkDetails = null;
 
@@ -3620,7 +4691,8 @@
                                 title: repItem.title,
                                 author: repItem.author,
                                 complete: isComplete,
-                                sections: isComplete ? 'Obra completa' : (selectedSecs.length > 0 ? selectedSecs.join(', ') : 'Trabajada')
+                                sections: isComplete ? 'Obra completa' : (selectedSecs.length > 0 ? selectedSecs.join(', ') : 'Trabajada'),
+                                sectionNames: isComplete ? undefined : selectedSecs
                             };
 
                             if(isComplete) {
@@ -3649,7 +4721,7 @@
                     work: document.getElementById('ev-work').value,
                     next: document.getElementById('ev-next').value,
                     nextWork: nextWork,
-                    performance: document.getElementById('ev-performance').value,
+                    performance: document.getElementById('ev-has-grade').checked ? document.getElementById('ev-performance').value : undefined,
                     observations: document.getElementById('ev-obs').value,
                     timestamp: new Date().toISOString()
                 };
@@ -3660,20 +4732,181 @@
                 if (evIdx > -1) {
                     const old = evList[evIdx];
                     const keepsComplete = evData.repWork && evData.repWork.complete && old.repWork && evData.repWork.repId === old.repWork.repId;
-                    if (old.repWork && old.repWork.complete && !keepsComplete) removeCompletedRep(appState.students[sIndex], old.repWork.repId);
+                    if (old.repWork && old.repWork.complete && !keepsComplete && !(event && !appState.repertoire.some(r => r.id === old.repWork.repId))) removeCompletedRep(appState.students[sIndex], old.repWork.repId);
                     evData.id = old.id; evData.timestamp = old.timestamp || evData.timestamp;
+                    if (old.classEventId) evData.classEventId = old.classEventId;
+                    if (event && !evData.repWork && old.repWork && !appState.repertoire.some(r => r.id === old.repWork.repId)) evData.repWork = old.repWork;
+                    if (event && !evData.nextWork && old.nextWork && !appState.repertoire.some(r => r.id === old.nextWork.repId)) evData.nextWork = old.nextWork;
                     evList[evIdx] = evData;
                 } else { evList.push(evData); }
-                appState.students[sIndex].evaluations.sort(sortEvaluations);
-                saveUserData();
+                if (event) {
+                    evData.classEventId = event.id;
+                    const existing = recordForClass(student.attendance, event);
+                    const attendance = {
+                        id: existing?.id || generateId(), classEventId: event.id, date: event.date,
+                        status: document.getElementById('close-class-status').value,
+                        notes: document.getElementById('close-class-notes').value
+                    };
+                    if (existing) student.attendance[student.attendance.indexOf(existing)] = attendance;
+                    else student.attendance.push(attendance);
+                    student.attendance.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                    event.closed = true;
+                }
+                student.evaluations.sort(sortEvaluations);
+                if (!saveUserData()) {
+                    Object.assign(student, previous);
+                    if (event) delete event.closed;
+                    return;
+                }
                 closeModal('modal-evaluation');
                 if (!inWeeklyTrimester(evData.date)) appState.weeklyTrimester = trimesterForDate(evData.date) || 'all';
-                renderStudentSubLists(appState.students[sIndex]);
-                showToast('Actividad guardada correctamente', 'success');
+                renderStudentSubLists(student);
+                if (event) {
+                    renderHome();
+                    renderSchedule();
+                }
+                showToast(event ? 'Clase registrada' : 'Actividad guardada correctamente', 'success');
             }
         });
 
+
+        let quarterlyFormTrimester = null;
+        const quarterlyDrafts = new Map();
+
+        function readQuarterlyInputs() {
+            return {
+                notaFinal: document.getElementById('q-nota-final').value,
+                actitud: document.getElementById('q-actitud').value,
+                comments: document.getElementById('q-comments').value,
+                otherSubjects: Array.from(document.getElementById('q-other-rows').children, row => ({
+                    subject: row.dataset.subject,
+                    notaFinal: row.querySelector('.q-other-grade').value,
+                    actitud: row.querySelector('.q-other-attitude').value,
+                    faltas: row.querySelector('.q-other-absences').value
+                }))
+            };
+        }
+
+        function updateQuarterlySubjectOptions() {
+            const select = document.getElementById('q-other-select');
+            const used = new Set(readQuarterlyInputs().otherSubjects.map(row => normKey(row.subject)));
+            const available = new Map();
+            for (const entry of currentStudent()?.enrolledSubjects || []) {
+                const name = String(entry.subject ?? '').trim(), key = normKey(name);
+                if (key && !available.has(key)) available.set(key, name);
+            }
+            const names = [...available].filter(([key]) => !used.has(key)).map(([, name]) => name);
+            document.getElementById('q-other-controls').classList.toggle('hidden', available.size > 0 && names.length === 0);
+            const placeholder = names.length ? 'Selecciona una asignatura' : 'Sin otras asignaturas matriculadas';
+            select.replaceChildren(new Option(placeholder, ''), ...names.map(name => new Option(name, name)));
+            select.disabled = !names.length;
+            document.getElementById('q-add-other').disabled = true;
+        }
+
+        function addQuarterlySubject(result) {
+            const row = document.createElement('fieldset');
+            row.className = 'border border-gray-200 rounded p-3 space-y-2';
+            row.dataset.subject = result.subject;
+            row.innerHTML = '<legend class="px-1 text-sm font-semibold text-gray-800"></legend>' +
+                '<div class="grid grid-cols-2 gap-2">' +
+                '<label class="block text-sm text-gray-700">Nota Final<input type="text" inputmode="decimal" required class="q-other-grade mt-1 block w-full border rounded px-2 py-1"></label>' +
+                '<label class="block text-sm text-gray-700">Actitud<select required class="q-other-attitude mt-1 block w-full border rounded px-2 py-1"></select></label>' +
+                '<label class="block text-sm text-gray-700">Faltas<input type="number" min="0" step="1" required class="q-other-absences mt-1 block w-full border rounded px-2 py-1"></label></div>' +
+                '<button type="button" class="text-sm text-red-600 hover:text-red-800">Quitar asignatura</button>';
+            row.querySelector('legend').textContent = result.subject;
+            const grade = row.querySelector('.q-other-grade');
+            grade.value = result.notaFinal ?? '';
+            const attitude = row.querySelector('.q-other-attitude');
+            attitude.replaceChildren(new Option('Selecciona', ''), ...Array.from(document.getElementById('q-actitud').options, option => option.cloneNode(true)));
+            attitude.value = result.actitud ?? '';
+            row.querySelector('.q-other-absences').value = result.faltas ?? '';
+            const remove = row.querySelector('button');
+            remove.setAttribute('aria-label', 'Quitar ' + result.subject);
+            remove.onclick = () => {
+                row.remove();
+                updateQuarterlySubjectOptions();
+                document.getElementById('q-other-select').focus();
+            };
+            document.getElementById('q-other-rows').appendChild(row);
+            return grade;
+        }
+
+        const quarterlySubjectSelect = document.getElementById('q-other-select');
+        const quarterlyAddSubject = document.getElementById('q-add-other');
+        quarterlySubjectSelect.addEventListener('change', () => { quarterlyAddSubject.disabled = !quarterlySubjectSelect.value; });
+        quarterlyAddSubject.addEventListener('click', () => {
+            if (!quarterlySubjectSelect.value || appState.readOnly) return;
+            const grade = addQuarterlySubject({ subject: quarterlySubjectSelect.value });
+            updateQuarterlySubjectOptions();
+            grade.focus();
+        });
+
+        function loadQuarterlyInputs(student, trimester) {
+            if (quarterlyFormTrimester === trimester) return;
+            if (quarterlyFormTrimester !== null) quarterlyDrafts.set(quarterlyFormTrimester, readQuarterlyInputs());
+            quarterlyFormTrimester = trimester;
+            const saved = quarterlyDrafts.get(trimester) || student.evaluations.find(ev => ev.type === 'quarterly' && String(ev.trimester) === trimester);
+            for (const [id, field] of [['q-nota-final', 'notaFinal'], ['q-actitud', 'actitud'], ['q-comments', 'comments']]) {
+                const input = document.getElementById(id);
+                input.value = saved?.[field] ?? '';
+                if (input.tagName === 'SELECT' && input.selectedIndex === -1) input.selectedIndex = 0;
+            }
+            document.getElementById('q-other-rows').replaceChildren();
+            (saved?.otherSubjects || []).forEach(addQuarterlySubject);
+            updateQuarterlySubjectOptions();
+        }
+
+        function validateQuarterlySubjects(results) {
+            const rows = document.getElementById('q-other-rows').children;
+            for (const [i, result] of results.entries()) {
+                const grade = result.notaFinal.trim();
+                const numericGrade = Number(grade.replace(',', '.'));
+                if (!/^\d+(?:[.,]\d+)?$/.test(grade) || numericGrade > 10) {
+                    showToast('Introduce una nota de 0 a 10 para «' + result.subject + '».', 'warning');
+                    rows[i].querySelector('.q-other-grade').focus();
+                    return false;
+                }
+                const absences = Number(result.faltas);
+                if (result.faltas === '' || !Number.isSafeInteger(absences) || absences < 0) {
+                    showToast('Introduce un número entero de faltas para «' + result.subject + '».', 'warning');
+                    rows[i].querySelector('.q-other-absences').focus();
+                    return false;
+                }
+                result.notaFinal = String(numericGrade).replace('.', ',');
+                result.faltas = absences;
+            }
+            return true;
+        }
+
+        function quarterlySubjectsHtml(subjects, enrolledSubjects = []) {
+            if (!subjects?.length) return '';
+            return `
+                <div class="border-t pt-2">
+                    <h4 class="text-xs font-bold text-gray-800 mb-1">Otras Asignaturas:</h4>
+                    <table class="quarterly-subjects-table w-full text-xs text-gray-700">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col">Asignatura</th><th scope="col">Curso</th><th scope="col">Nota Final</th><th scope="col">Actitud</th><th scope="col">Faltas</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${subjects.map(row => {
+                                const course = enrolledSubjects.find(subject => normKey(subject.subject) === normKey(row.subject))?.course;
+                                return `<tr>
+                                    <th scope="row">${esc(row.subject)}</th><td>${esc(course || '—')}</td><td>${esc(row.notaFinal)}</td>
+                                    <td>${esc(row.actitud)}</td><td>${esc(row.faltas)}</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
         function openQuarterlyModal() {
+            if (!currentStudent()) return;
+            quarterlyDrafts.clear();
+            quarterlyFormTrimester = null;
             updateQuarterlyStatsModal();
             openModal('modal-quarterly');
         }
@@ -3683,6 +4916,7 @@
             if(!student) return;
 
             const tIndex = document.getElementById('q-trimester').value;
+            loadQuarterlyInputs(student, tIndex);
             const tStartStr = appState.settings[`trimester${tIndex}Start`];
             const tEndStr = appState.settings[`trimester${tIndex}End`];
 
@@ -3710,7 +4944,7 @@
             let sumNotes = 0;
             let countNotes = 0;
             student.evaluations.forEach(ev => {
-                if(ev.type === 'weekly' && ev.performance !== undefined) {
+                if(ev.type === 'weekly' && ev.performance != null && ev.performance !== '' && Number.isFinite(Number(ev.performance))) {
                     const evDate = parseLocalDate(ev.date);
                     if(evDate >= tStart && evDate <= tEnd) {
                         sumNotes += parseFloat(ev.performance);
@@ -3730,9 +4964,10 @@
 
         document.getElementById('form-quarterly').addEventListener('submit', (e) => {
             e.preventDefault();
-            const student = appState.students.find(s => s.id === appState.currentViewStudentId);
-            const sIndex = appState.students.findIndex(s => s.id === appState.currentViewStudentId);
-            if(sIndex > -1) {
+            const student = currentStudent();
+            if (student && !appState.readOnly) {
+                const { otherSubjects, ...inputs } = readQuarterlyInputs();
+                if (!validateQuarterlySubjects(otherSubjects)) return;
                 const tIndex = document.getElementById('q-trimester').value;
                 const tStartStr = appState.settings[`trimester${tIndex}Start`];
                 const tEndStr = appState.settings[`trimester${tIndex}End`];
@@ -3825,23 +5060,22 @@
                     trimester: tIndex,
                     calcMedia: document.getElementById('q-calc-media').textContent,
                     calcFaltas: document.getElementById('q-calc-faltas').textContent,
-                    actitud: document.getElementById('q-actitud').value,
-                    notaFinal: document.getElementById('q-nota-final').value,
-                    comments: document.getElementById('q-comments').value,
+                    ...inputs,
+                    ...(otherSubjects.length ? { otherSubjects } : {}),
                     quarterWorks: quarterWorks,
                     timestamp: new Date().toISOString()
                 };
 
-                const hasQ = appState.students[sIndex].evaluations.some(e => e.type === 'quarterly' && String(e.trimester) === String(tIndex));
-                if (hasQ) {
-                    if (!confirm(`Ya existe un resumen del ${tIndex}º trimestre. ¿Quieres sobrescribirlo y reemplazar el anterior?`)) return;
-                    appState.students[sIndex].evaluations = appState.students[sIndex].evaluations.filter(e => !(e.type === 'quarterly' && String(e.trimester) === String(tIndex)));
+                const previous = student.evaluations;
+                const matches = ev => ev.type === 'quarterly' && String(ev.trimester) === tIndex;
+                if (previous.some(matches) && !confirm(`Ya existe un resumen del ${tIndex}º trimestre. ¿Quieres sobrescribirlo y reemplazar el anterior?`)) return;
+                student.evaluations = [...previous.filter(ev => !matches(ev)), evData].sort(sortEvaluations);
+                if (!saveUserData()) {
+                    student.evaluations = previous;
+                    return;
                 }
-                appState.students[sIndex].evaluations.push(evData);
-                appState.students[sIndex].evaluations.sort(sortEvaluations);
-                saveUserData();
                 closeModal('modal-quarterly');
-                renderStudentSubLists(appState.students[sIndex]);
+                renderStudentSubLists(student);
                 showToast('Resumen trimestral guardado', 'success');
             }
         });
@@ -3918,6 +5152,8 @@
 
             const weeklyList = document.getElementById('evaluation-list');
             const quarterlyList = document.getElementById('quarterly-summary-list');
+            document.getElementById('quarterly-summary-title').textContent = student.course
+                ? 'Resumen Trimestral (Curso ' + student.course + ')' : 'Resumen Trimestral';
             
             weeklyList.innerHTML = '';
             quarterlyList.innerHTML = '';
@@ -3955,7 +5191,7 @@
                         <div class="bg-white p-3.5 rounded-lg border border-gray-200 shadow-sm">
                             <div class="flex justify-between mb-1.5 pb-1.5 border-b border-gray-100 text-xs">
                                 <span class="font-bold text-gray-700">${fmtD(ev.date)}</span>
-                                <span class="flex items-center gap-2"><span class="text-blue-600 font-semibold">Nota: ${ev.performance ? (ev.performance / 10).toFixed(1) : '-'}</span><button type="button" onclick="editEvaluation('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-1" title="Editar"><i class="fas fa-edit"></i></button><button type="button" onclick="deleteEvaluation('${ev.id}')" class="text-gray-400 hover:text-red-600 p-1" title="Eliminar"><i class="fas fa-trash"></i></button></span>
+                                <span class="flex items-center gap-2"><span class="text-blue-600 font-semibold">Nota: ${ev.performance != null && ev.performance !== '' ? (ev.performance / 10).toFixed(1) : '—'}</span><button type="button" onclick="editEvaluation('${ev.id}')" class="text-gray-400 hover:text-blue-600 p-1" title="Editar"><i class="fas fa-edit"></i></button><button type="button" onclick="deleteEvaluation('${ev.id}')" class="text-gray-400 hover:text-red-600 p-1" title="Eliminar"><i class="fas fa-trash"></i></button></span>
                             </div>
                             <p><b class="text-xs text-gray-900 space-y-1">Trabajo realizado:</b></p>
                             ${repHtml}
@@ -3995,6 +5231,7 @@
                                 <span><b>Actitud:</b> ${esc(ev.actitud || '-')}</span>
                                 <span><b>Faltas:</b> ${esc(ev.calcFaltas || '0')}</span>
                             </div>
+                            ${quarterlySubjectsHtml(ev.otherSubjects, student.enrolledSubjects)}
                             <div class="border-t pt-2">
                                 <span class="text-xs font-bold text-gray-800 uppercase block mb-1"><i class="fas fa-book-open text-indigo-600 mr-1"></i>Trabajo Realizado (Repertorio):</span>
                                 <ul class="list-disc list-inside text-xs text-gray-700 space-y-1 bg-gray-50 p-2.5 rounded border">
@@ -4030,6 +5267,54 @@
             }
         }
 
+        function addSectionRow(section = {}) {
+            const row = document.createElement('div');
+            row.className = 'rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2';
+            row.innerHTML = '<label class="block text-sm text-gray-700">Nombre<input type="text" class="rep-section-title mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Ej.: I. Allegro"></label>' +
+                '<label class="block text-sm text-gray-700">Compases (opcional)<input type="text" class="rep-section-range mt-1 block w-full border rounded px-3 py-2 text-sm" placeholder="Ej.: 1-16 o 8"></label>' +
+                '<button type="button" class="text-sm text-red-600 hover:text-red-800">Quitar sección</button>';
+            const title = row.querySelector('.rep-section-title');
+            title.value = section.title || '';
+            row.querySelector('.rep-section-range').value = sectionRange(section, '-');
+            row.querySelector('button').onclick = () => row.remove();
+            document.getElementById('rep-section-rows').appendChild(row);
+            return title;
+        }
+
+        function setSectionRows(sections) {
+            document.getElementById('rep-section-rows').replaceChildren();
+            readWorkSections(sections).forEach(addSectionRow);
+        }
+
+        function readSectionRows() {
+            const sections = [];
+            for (const row of document.getElementById('rep-section-rows').children) {
+                const titleInput = row.querySelector('.rep-section-title');
+                const rangeInput = row.querySelector('.rep-section-range');
+                const title = titleInput.value.trim(), range = rangeInput.value.trim();
+                if (!title && !range) continue;
+                if (!title) {
+                    titleInput.focus();
+                    showToast('Indica el nombre de la sección o del movimiento.', 'warning');
+                    return null;
+                }
+                if (!range) {
+                    sections.push({ title });
+                    continue;
+                }
+                const match = range.match(/^(\d+)(?:\s*[-–—]\s*(\d+))?$/);
+                const startMeasure = Number(match?.[1]), endMeasure = Number(match?.[2] ?? match?.[1]);
+                if (!Number.isSafeInteger(startMeasure) || !Number.isSafeInteger(endMeasure) || startMeasure < 1 || endMeasure < startMeasure) {
+                    rangeInput.focus();
+                    showToast('Compases no válidos en «' + title + '». Usa un rango ascendente como 1-16 o un único compás como 8.', 'warning');
+                    return null;
+                }
+                sections.push({ title, startMeasure, endMeasure });
+            }
+            return sections;
+        }
+
+
         function toggleRepertoireFields() {
             const type = document.getElementById('rep-type').value;
             if (type === 'libro') {
@@ -4046,7 +5331,8 @@
             const id = document.getElementById('rep-id').value;
             const type = document.getElementById('rep-type').value;
             const contents = type === 'libro' ? readBookContents() : [];
-            if (contents === null) return;
+            const sections = type === 'obra' ? readSectionRows() : [];
+            if (contents === null || sections === null) return;
             const repData = {
                 id: id || generateId(),
                 type: type,
@@ -4054,22 +5340,20 @@
                 author: document.getElementById('rep-author').value,
                 tonality: type === 'obra' ? document.getElementById('rep-tonality').value : '',
                 measures: type === 'obra' ? document.getElementById('rep-measures').value : '',
-                sections: type === 'obra' ? document.getElementById('rep-sections').value : '',
+                sections,
                 difficulty: type === 'obra' ? (Number(document.getElementById('rep-difficulty').value) || '') : '',
                 pages: type === 'libro' ? document.getElementById('rep-pages').value : '',
                 contents: type === 'libro' ? contents : []
             };
 
-            if (id) {
-                const index = appState.repertoire.findIndex(r => r.id === id);
-                appState.repertoire[index] = repData;
-                showToast('Actualizado correctamente', 'success');
-            } else {
-                appState.repertoire.push(repData);
-                showToast('Añadido correctamente', 'success');
+            const previous = appState.repertoire;
+            appState.repertoire = id ? previous.map(r => r.id === id ? repData : r) : [...previous, repData];
+            if (!saveUserData()) {
+                appState.repertoire = previous;
+                packStore();
+                return;
             }
-
-            saveUserData();
+            showToast(id ? 'Actualizado correctamente' : 'Añadido correctamente', 'success');
             closeModal('modal-repertoire');
             renderRepertoire();
         });
@@ -4122,11 +5406,12 @@
             const badge = isBook
                 ? '<span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded absolute -top-3 left-4 uppercase font-bold shadow-sm border border-green-200">Libro</span>'
                 : '<span class="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded absolute -top-3 left-4 uppercase font-bold shadow-sm border border-indigo-200">Obra</span>';
+            const sections = isBook ? '' : workSectionsHtml(r);
             const details = isBook
                 ? (r.pages ? `<p><span class="text-gray-500">Páginas:</span> ${esc(r.pages)}</p>` : '') + repContentBtn(r, 'mt-3 w-full text-sm px-3 py-2')
                 : `${r.tonality ? `<p><span class="text-gray-500">Tonalidad:</span> ${esc(r.tonality)}</p>` : ''}
                    ${r.measures ? `<p><span class="text-gray-500">Compases:</span> ${esc(r.measures)}</p>` : ''}
-                   ${r.sections ? `<p class="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded"><b>Secciones:</b><br>${esc(r.sections).replace(/\n/g, '<br>')}</p>` : ''}`;
+                   ${sections ? `<div class="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">${sections}</div>` : ''}`;
             return `<div class="bg-white rounded-lg shadow border border-gray-200 p-4 relative pt-8 mt-3">
                 ${badge}
                 <div class="absolute top-2 right-2 flex space-x-2">${repActionsHtml(r)}</div>
@@ -4176,7 +5461,7 @@
             const rows = [
                 r.tonality ? `<div><span class="text-gray-400">Tonalidad:</span> ${esc(r.tonality)}</div>` : '',
                 r.measures ? `<div><span class="text-gray-400">Compases:</span> ${esc(r.measures)}</div>` : '',
-                r.sections ? `<div class="whitespace-pre-line"><span class="text-gray-400">Secciones:</span> ${esc(r.sections)}</div>` : ''
+                workSectionsHtml(r)
             ].filter(Boolean);
             const expandable = rows.length > 0;
             const open = expandable && appState.repOpen && appState.repOpen.has(r.id);
@@ -4229,7 +5514,7 @@
             document.getElementById('rep-author').value = r.author;
             document.getElementById('rep-tonality').value = r.tonality || '';
             document.getElementById('rep-measures').value = r.measures || '';
-            document.getElementById('rep-sections').value = r.sections || '';
+            setSectionRows(r.sections);
             document.getElementById('rep-difficulty').value = r.difficulty || '';
             document.getElementById('rep-pages').value = r.pages || '';
             setBookContent(r.contents || []);
@@ -4255,29 +5540,54 @@
             document.getElementById('set-t2-end').value = appState.settings.trimester2End || '';
             document.getElementById('set-t3-start').value = appState.settings.trimester3Start || '';
             document.getElementById('set-t3-end').value = appState.settings.trimester3End || '';
+            document.getElementById('save-calendar').disabled = !!appState.readOnly;
             renderHolidays();
         }
 
-        function renderCourseConfig(){
-
+        function renderCourseConfig() {
+            renderSettings();
         }
 
-        document.getElementById('form-settings').addEventListener('change', (e) => {
-            if (e.target.id === 'holiday-name' || e.target.id === 'holiday-input') return;
-            if (appState.readOnly) { renderSettings(); return; }
+        function calendarError(settings) {
+            const { courseStart: start, courseEnd: end } = settings;
+            if (!start || !end || start > end) return 'Indica unas fechas válidas para el curso.';
+            let previousEnd = '';
+            for (const i of [1, 2, 3]) {
+                const from = settings['trimester' + i + 'Start'];
+                const to = settings['trimester' + i + 'End'];
+                if (!from && !to) continue;
+                if (!from || !to || from > to) return 'Revisa el inicio y el fin del trimestre ' + i + '.';
+                if (from < start || to > end) return 'El trimestre ' + i + ' debe estar dentro de las fechas del curso.';
+                if (previousEnd && from <= previousEnd) return 'Los trimestres deben estar ordenados y no pueden solaparse.';
+                previousEnd = to;
+            }
+            return '';
+        }
 
-            appState.settings.courseStart = document.getElementById('set-course-start').value;
-            appState.settings.courseEnd = document.getElementById('set-course-end').value;
-            appState.settings.trimester1Start = document.getElementById('set-t1-start').value;
-            appState.settings.trimester1End = document.getElementById('set-t1-end').value;
-            appState.settings.trimester2Start = document.getElementById('set-t2-start').value;
-            appState.settings.trimester2End = document.getElementById('set-t2-end').value;
-            appState.settings.trimester3Start = document.getElementById('set-t3-start').value;
-            appState.settings.trimester3End = document.getElementById('set-t3-end').value;
-            
-            saveUserData();
-            regenerateAllSchedules();
-            showToast('Configuración guardada automáticamente', 'success');
+        document.getElementById('form-settings').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (appState.readOnly || !appState.currentCourseId) return;
+            if (e.submitter && e.submitter.id !== 'save-calendar') return;
+            const value = id => document.getElementById(id).value;
+            const settings = { ...appState.settings, courseStart: value('set-course-start'), courseEnd: value('set-course-end') };
+            for (const i of [1, 2, 3]) {
+                settings['trimester' + i + 'Start'] = value('set-t' + i + '-start');
+                settings['trimester' + i + 'End'] = value('set-t' + i + '-end');
+            }
+            const error = calendarError(settings);
+            if (error) { showToast(error, 'warning'); return; }
+            const staged = { settings, schedule: clone(appState.schedule) };
+            appState.students.forEach(st => generateStudentSchedule(st, true, staged));
+            const before = { settings: appState.settings, schedule: appState.schedule };
+            Object.assign(appState, staged);
+            if (!saveUserData()) {
+                Object.assign(appState, before);
+                packStore();
+                return;
+            }
+            renderSchedule();
+            renderHome();
+            showToast('Calendario aplicado', 'success');
         });
 
         function addHoliday() {
