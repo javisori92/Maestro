@@ -1379,6 +1379,7 @@
                     <div id="sch-audition-scroll" class="hidden rounded border border-gray-200" role="region" aria-label="Orden de actuación" tabindex="0">
                         <ol id="sch-audition-participants" class="space-y-2 bg-gray-50 p-2" role="list"></ol>
                     </div>
+                    <p id="sch-audition-empty" class="hidden rounded border border-dashed border-gray-300 bg-gray-50 px-3 py-4 text-center text-sm text-gray-600" role="status"></p>
                     <button id="sch-add-participant" type="button" class="w-full rounded border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700">Añadir participante</button>
                     <div id="sch-audition-duration" class="hidden border-t border-gray-200 pt-2 text-sm">
                         <span class="font-semibold text-gray-800">Duración aproximada de la audición</span>
@@ -1461,10 +1462,11 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Estado</label>
-                    <select id="att-status" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
-                        <option value="present">Asiste</option>
-                        <option value="absent">Falta</option>
-                    </select>
+                    <input type="hidden" id="att-status" value="">
+                    <div class="mt-2 grid grid-cols-2 gap-3" role="group" aria-label="Estado de asistencia">
+                        <button type="button" id="att-status-present" aria-pressed="false" onclick="setAttendanceStatus('present')" class="attendance-choice attendance-choice-present rounded-lg border-2 px-3 py-3 text-sm font-semibold transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"><i class="fas fa-check mr-1" aria-hidden="true"></i> Asiste</button>
+                        <button type="button" id="att-status-absent" aria-pressed="false" onclick="setAttendanceStatus('absent')" class="attendance-choice attendance-choice-absent rounded-lg border-2 px-3 py-3 text-sm font-semibold transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"><i class="fas fa-times mr-1" aria-hidden="true"></i> Falta</button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Notas</label>
@@ -1492,12 +1494,14 @@
                 </div>
                 <fieldset id="close-class-attendance" class="hidden border border-gray-200 rounded p-3 space-y-2">
                     <legend class="px-1 font-bold text-gray-800">Asistencia</legend>
-                    <label class="block text-sm font-medium text-gray-700">Estado
-                        <select id="close-class-status" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
-                            <option value="present">Asiste</option>
-                            <option value="absent">Falta</option>
-                        </select>
-                    </label>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-700 mb-1.5">Estado</span>
+                        <input type="hidden" id="close-class-status" value="present">
+                        <div class="grid grid-cols-2 gap-2" role="group" aria-label="Estado de asistencia de la clase">
+                            <button type="button" id="close-class-status-present" aria-pressed="false" onclick="setCloseClassStatus('present')" class="attendance-choice attendance-choice-present rounded-lg border-2 px-3 py-1.5 text-sm font-semibold transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"><i class="fas fa-check mr-1" aria-hidden="true"></i> Asiste</button>
+                            <button type="button" id="close-class-status-absent" aria-pressed="false" onclick="setCloseClassStatus('absent')" class="attendance-choice attendance-choice-absent rounded-lg border-2 px-3 py-1.5 text-sm font-semibold transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"><i class="fas fa-times mr-1" aria-hidden="true"></i> Falta</button>
+                        </div>
+                    </div>
                     <label class="block text-sm font-medium text-gray-700">Notas de asistencia
                         <input id="close-class-notes" type="text" class="mt-1 block w-full border rounded px-3 py-2 text-sm">
                     </label>
@@ -1546,7 +1550,8 @@
                             <span>Rendimiento (<span id="ev-perf-val">50</span>%)</span>
                             <span class="text-blue-600 font-bold">Nota: <span id="ev-perf-grade">5.0</span></span>
                         </label>
-                        <label class="block mt-2 text-sm"><input type="checkbox" id="ev-has-grade" onchange="updatePerfValue()" checked> Registrar nota</label>
+                        <label class="block mt-2 text-sm font-medium text-gray-700">Registrar nota</label>
+                        <input type="hidden" id="ev-has-grade" value="true">
                         <input aria-label="Nota de la actividad" type="range" id="ev-performance" min="0" max="100" value="50" oninput="updatePerfValue()" class="mt-2 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
                     <div>
@@ -1574,7 +1579,7 @@
 
                 <div class="pt-4 flex justify-end space-x-2">
                     <button type="button" onclick="closeModal('modal-evaluation')" class="px-4 py-2 bg-gray-200 rounded text-sm">Cancelar</button>
-                    <button type="submit" id="evaluation-submit" class="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium">Guardar Registro</button>
+                    <button type="submit" id="evaluation-submit" disabled class="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium disabled:bg-purple-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">Guardar Registro</button>
                 </div>
             </form>
         </div>
@@ -1874,7 +1879,42 @@
     </div>
 
     <!-- JavaScript Application Logic -->
+    <style>
+        .attendance-choice { transform: translateY(0); box-shadow: 0 4px 0 rgba(0,0,0,.13); }
+        .attendance-choice-present { background: #dcfce7; border-color: #86efac; color: #166534; }
+        .attendance-choice-absent { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .attendance-choice:not(.attendance-selected):hover { filter: brightness(.97); }
+        .attendance-choice.attendance-selected { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.15), inset 0 2px 5px rgba(0,0,0,.12); }
+        .attendance-choice-present.attendance-selected { background: #86efac; border-color: #15803d; }
+        .attendance-choice-absent.attendance-selected { background: #fca5a5; border-color: #b91c1c; }
+        .attendance-choice:active { transform: translateY(4px); box-shadow: inset 0 2px 5px rgba(0,0,0,.15); }
+    </style>
     <script>
+        function setCloseClassStatus(value) {
+            if (value !== 'present' && value !== 'absent') return;
+            const status = document.getElementById('close-class-status');
+            if (!status) return;
+            status.value = value;
+            ['present', 'absent'].forEach(key => {
+                const button = document.getElementById('close-class-status-' + key);
+                if (!button) return;
+                const selected = key === value;
+                button.classList.toggle('attendance-selected', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+        }
+        function setAttendanceStatus(value) {
+            const status = document.getElementById('att-status');
+            if (!status) return;
+            status.value = value;
+            ['present', 'absent'].forEach(key => {
+                const button = document.getElementById('att-status-' + key);
+                if (!button) return;
+                const selected = key === value;
+                button.classList.toggle('attendance-selected', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+        }
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) modal.classList.remove('hidden');
@@ -3011,13 +3051,8 @@
             openAttendanceModal();
             document.getElementById('att-id').value = id;
             document.getElementById('att-date').value = a.date;
-            const status = document.getElementById('att-status');
-            if (a.status === 'changed') {
-                const legacy = new Option('Cambio de clase', 'changed');
-                legacy.hidden = true;
-                status.add(legacy);
-            }
-            status.value = a.status;
+            // Los registros antiguos de «Cambio de clase» se conservan sin alterar.
+            setAttendanceStatus(a.status);
             document.getElementById('att-notes').value = a.notes || '';
         }
         function deleteAttendance(id) {
@@ -3036,7 +3071,7 @@
             document.getElementById('ev-work').value = e.work || '';
             document.getElementById('ev-next').value = e.next || '';
             document.getElementById('ev-performance').value = e.performance ?? 50;
-            document.getElementById('ev-has-grade').checked = e.performance != null && e.performance !== '';
+            document.getElementById('ev-has-grade').value = 'true';
             updatePerfValue();
             document.getElementById('ev-obs').value = e.observations || '';
             if (e.nextWork && appState.repertoire.some(r => r.id === e.nextWork.repId)) {
@@ -3045,6 +3080,7 @@
                 (e.nextWork.lessons || []).forEach(t => { const cb = Array.from(document.querySelectorAll('.nx-lesson-cb')).find(c => c.value === t); if (cb) cb.checked = true; });
                 document.getElementById('ev-next-pages').value = e.nextWork.pages || '';
             }
+            updateEvaluationSubmitState();
             const w = e.repWork, sel = document.getElementById('ev-rep-select');
             if (!w || !w.repId) return;
             const r = appState.repertoire.find(x => x.id === w.repId);
@@ -3218,7 +3254,7 @@
 
             pendingEvents.forEach(ev => {
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition hover:shadow-md flex flex-col xl:flex-row xl:items-center justify-between gap-4';
+                card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5 w-full max-w-5xl mx-auto';
                 
                 if (ev.type === 'class') {
                     const student = appState.students.find(s => s.id === ev.studentId);
@@ -3233,7 +3269,7 @@
                     }
                     
                     card.innerHTML = `
-                        <div class="flex flex-col sm:flex-row sm:items-start gap-5">
+                        <div class="flex flex-1 min-w-0 flex-col sm:flex-row sm:items-start gap-5">
                             <div class="bg-blue-50 text-blue-700 font-bold py-3 px-4 rounded-xl text-center min-w-[100px] border border-blue-100 flex-shrink-0">
                                 <div class="text-2xl tracking-tight">${ev.startTime}</div>
                                 <div class="text-xs font-semibold opacity-70 mt-1">${ev.endTime}</div>
@@ -3252,8 +3288,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 lg:justify-end mt-4 xl:mt-0 items-center">
-                            <button type="button" onclick="openCloseClass('${ev.id}')" class="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 bg-purple-600 text-white hover:bg-purple-700 px-5 py-2.5 rounded-lg font-bold text-sm shadow-sm">
+                        <div class="flex flex-shrink-0 items-center justify-center md:justify-end md:self-center">
+                            <button type="button" onclick="openCloseClass('${ev.id}')" class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-purple-600 text-white hover:bg-purple-700 px-5 py-2.5 rounded-lg font-bold text-sm shadow-sm">
                                 <i class="fas fa-check-double"></i> Registrar clase
                             </button>
                         </div>
@@ -3311,18 +3347,18 @@
             if (activity) editEvaluation(activity.id);
             else {
                 openEvaluationModal();
-                document.getElementById('ev-has-grade').checked = false;
+                document.getElementById('ev-has-grade').value = 'true';
                 updatePerfValue();
             }
             appState.closingEventId = id;
             document.getElementById('ev-date').value = event.date;
             document.getElementById('ev-date').readOnly = true;
             document.getElementById('close-class-attendance').classList.remove('hidden');
-            document.getElementById('close-class-status').value = attendance?.status === 'absent' ? 'absent' : 'present';
+            setCloseClassStatus(attendance?.status === 'absent' ? 'absent' : 'present');
             document.getElementById('close-class-notes').value = attendance?.notes || '';
             document.getElementById('evaluation-title').textContent = 'Registrar clase · ' + ([student.nombre, student.apellidos].filter(Boolean).join(' ') || student.name || 'Alumno');
             document.getElementById('evaluation-submit').textContent = 'Guardar registro';
-            document.getElementById('close-class-status').focus();
+            document.getElementById('close-class-status-' + document.getElementById('close-class-status').value).focus();
             return true;
         }
 
@@ -3482,6 +3518,22 @@
             const add = document.getElementById('sch-add-participant');
             add.disabled = available <= pending;
             add.classList.toggle('hidden', add.disabled);
+            const empty = document.getElementById('sch-audition-empty');
+            const count = document.getElementById('sch-audition-participants').children.length;
+            const hasCandidates = appState.students.length > 0 || rehearsalAuditionCandidates().length > 0;
+            const hasWorks = appState.repertoire.some(item => item.title?.trim());
+            const message = !hasCandidates
+                ? 'Todavía no hay alumnos ni ensayos con pianista acompañante registrados. Añade un alumno o registra un ensayo para preparar el programa.'
+                : !hasWorks && !rehearsalAuditionCandidates().length
+                    ? 'No hay obras registradas. Añade obras al repertorio antes de preparar el programa.'
+                    : count === 0 ? 'El programa todavía no tiene participantes. Pulsa «Añadir participante» para empezar.' : '';
+            empty.textContent = message;
+            empty.classList.toggle('hidden', !message);
+            // Evitar formularios sin opciones útiles. Los ensayos pueden aportar su propia obra.
+            if (!hasCandidates || (!hasWorks && !rehearsalAuditionCandidates().length)) {
+                add.disabled = true;
+                add.classList.add('hidden');
+            }
         }
 
         function updateAuditionSummary(row) {
@@ -3765,6 +3817,12 @@
             }
             row.querySelector('.audition-confirm').onclick = () => {
                 if (!studentSelect.value) { studentSelect.reportValidity(); studentSelect.focus(); return; }
+                const workSelects = [...row.querySelectorAll('.audition-work')];
+                if (!workSelects.length || workSelects.some(select => !select.value)) {
+                    showToast('Selecciona una obra para este participante antes de añadirlo.', 'warning');
+                    workSelects.find(select => !select.value)?.focus();
+                    return;
+                }
                 setEditing(false);
                 updateAuditionSummary(row);
                 updateAuditionTotal();
@@ -3830,7 +3888,11 @@
             setAuditionProgram(ev.program || []);
             const modal = document.getElementById('modal-audition-program');
             modal.classList.add('program-readonly');
-            document.getElementById('sch-audition-program').disabled = true;
+            // La consulta se abre sin pasar por el editor: el fieldset puede seguir
+            // oculto desde la inicialización o desde otro tipo de evento.
+            const programFieldset = document.getElementById('sch-audition-program');
+            programFieldset.classList.remove('hidden');
+            programFieldset.disabled = true;
             document.querySelectorAll('#sch-audition-participants .audition-participant').forEach(row => {
                 row.querySelector('.audition-editor').classList.add('hidden');
                 row.querySelector('.audition-card-head').classList.remove('hidden');
@@ -4142,6 +4204,11 @@
         function viewRehearsal(id) {
             const ev = appState.schedule.find(item => item.id === id && item.type === 'rehearsal');
             if (!ev) return;
+            if (![ev.rehearsalName, ev.rehearsalInstrument, ev.rehearsalWork].some(value => String(value || '').trim())) {
+                if (!appState.readOnly) editSchedule(id);
+                else showToast('Este ensayo todavía no tiene información del alumno ni de la obra.', 'info');
+                return;
+            }
             document.getElementById('rehearsal-detail-heading').textContent = 'Ensayo con Pianista Acompañante';
             const setRehearsalDetail = (elementId, label, value) => {
                 const element = document.getElementById(elementId);
@@ -4459,7 +4526,7 @@
             get('student-options-badge').classList.toggle('hidden', !(fCourse || fSubject || !isNaN(ageMin) || !isNaN(ageMax) || sortKey !== 'nombre' || dir === -1));
 
             if(filtered.length === 0) {
-                list.innerHTML = '<li class="p-4 text-center text-gray-500">No se encontraron alumnos.</li>';
+                list.innerHTML = `<li class="p-6 text-center text-gray-500">${appState.students.length ? 'No hay alumnos que coincidan con los filtros. Modifica la búsqueda o borra los filtros.' : 'Todavía no hay alumnos registrados. Utiliza «Añadir alumno» para crear el primero.'}</li>`;
                 return;
             }
 
@@ -4689,6 +4756,11 @@
 
         document.getElementById('form-attendance').addEventListener('submit', (e) => {
             e.preventDefault();
+            const selectedStatus = document.getElementById('att-status').value;
+            if (!['present', 'absent', 'changed'].includes(selectedStatus)) {
+                showToast('Selecciona Asiste o Falta antes de guardar', 'warning');
+                return;
+            }
             const sIndex = appState.students.findIndex(s => s.id === appState.currentViewStudentId);
             if(sIndex > -1) {
                 const attData = {
@@ -4713,8 +4785,7 @@
 
         function openAttendanceModal() {
             document.getElementById('form-attendance').reset(); document.getElementById('att-id').value = '';
-            document.querySelector('#att-status option[value="changed"]')?.remove();
-            document.getElementById('att-status').value = 'present';
+            setAttendanceStatus('');
             const attDate = document.getElementById('att-date');
             if(attDate) attDate.value = getTodayDate();
             openModal('modal-attendance');
@@ -4746,7 +4817,8 @@
             const pieceCompleteCb = document.getElementById('ev-piece-complete');
             if(pieceCompleteCb) pieceCompleteCb.checked = false;
             togglePieceComplete();
-            openModal('modal-evaluation'); 
+            openModal('modal-evaluation');
+            updateEvaluationSubmitState();
         }
 
         function toggleEvalRepFields() {
@@ -4794,15 +4866,42 @@
             }
         }
 
+        function evaluationHasContent() {
+            const value = id => document.getElementById(id).value.trim();
+            // Una obra/libro elegido cuenta como contenido trabajado; también el texto libre.
+            // Para el próximo día cuentan tanto el selector como las indicaciones escritas.
+            return Boolean(value('ev-work') || value('ev-rep-select') || value('ev-next') || value('ev-next-rep'));
+        }
+
+        function updateEvaluationSubmitState() {
+            const button = document.getElementById('evaluation-submit');
+            const valid = evaluationHasContent() && Boolean(document.getElementById('ev-date').value) &&
+                document.getElementById('ev-performance').value !== '';
+            button.disabled = !valid;
+            button.setAttribute('aria-disabled', String(!valid));
+            button.title = valid ? '' : 'Añade trabajo realizado o contenido para el próximo día y registra una nota.';
+        }
+
+        // Delegación: incluye campos generados dinámicamente y ediciones de registros.
+        const evaluationForm = document.getElementById('form-evaluation');
+        evaluationForm.addEventListener('input', updateEvaluationSubmitState);
+        evaluationForm.addEventListener('change', updateEvaluationSubmitState);
+
         function updatePerfValue() {
             const input = document.getElementById('ev-performance');
-            input.disabled = !document.getElementById('ev-has-grade').checked;
-            document.getElementById('ev-perf-val').textContent = input.disabled ? '—' : input.value;
-            document.getElementById('ev-perf-grade').textContent = input.disabled ? '—' : (input.value / 10).toFixed(1);
+            input.disabled = false;
+            document.getElementById('ev-perf-val').textContent = input.value;
+            document.getElementById('ev-perf-grade').textContent = (input.value / 10).toFixed(1);
+            updateEvaluationSubmitState();
         }
 
         document.getElementById('form-evaluation').addEventListener('submit', (e) => {
             e.preventDefault();
+            updateEvaluationSubmitState();
+            if (document.getElementById('evaluation-submit').disabled) {
+                showToast('Indica el trabajo realizado o el contenido para el próximo día y registra una nota.', 'warning');
+                return;
+            }
             const nextWork = readNextWork();
             if (nextWork === false) return;
             const sIndex = appState.students.findIndex(s => s.id === appState.currentViewStudentId);
@@ -4874,7 +4973,7 @@
                     work: document.getElementById('ev-work').value,
                     next: document.getElementById('ev-next').value,
                     nextWork: nextWork,
-                    performance: document.getElementById('ev-has-grade').checked ? document.getElementById('ev-performance').value : undefined,
+                    performance: document.getElementById('ev-performance').value,
                     observations: document.getElementById('ev-obs').value,
                     timestamp: new Date().toISOString()
                 };
@@ -5534,6 +5633,7 @@
             const r = appState.repertoire.find(x => x.id === id);
             if (!r) return;
             const list = r.contents || [];
+            if (!list.length) { showToast('Este libro todavía no tiene lecciones registradas. Edita el libro para añadirlas.', 'info'); return; }
             document.getElementById('bc-title').textContent = r.title;
             document.getElementById('bc-author').textContent = r.author || '';
             document.getElementById('bc-count').textContent = list.length ? `${list.length} ${list.length === 1 ? 'lección' : 'lecciones'}` : '';
