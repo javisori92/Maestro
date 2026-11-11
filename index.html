@@ -2574,7 +2574,9 @@
                 </div>
             </div>`;
             document.getElementById('course-current').innerHTML = sorted.length ? card(sorted[0], true) : '<p class="text-sm text-gray-500">Aún no hay ningún curso. Crea el primero.</p>';
-            document.getElementById('course-previous').innerHTML = sorted.slice(1).map(c => card(c, false)).join('') || '<p class="text-sm text-gray-500">No hay cursos anteriores.</p>';
+            const previousCourses = sorted.slice(1);
+            document.getElementById('course-previous-section').classList.toggle('hidden', previousCourses.length === 0);
+            document.getElementById('course-previous').innerHTML = previousCourses.map(c => card(c, false)).join('');
             document.getElementById('course-close').classList.toggle('hidden', !appState.currentCourseId);
             document.getElementById('course-screen').classList.remove('hidden');
         }
@@ -2653,7 +2655,7 @@
                 <div class="flex items-center justify-between mb-6"><h2 class="text-2xl font-bold text-gray-900"><i class="fas fa-layer-group mr-2 text-blue-600"></i>Maestro · Cursos</h2>
                 <button type="button" id="course-close" onclick="document.getElementById('course-screen').classList.add('hidden')" class="hidden text-sm text-gray-500 hover:text-gray-800">Volver</button></div>
                 <div id="course-main-pane"><h3 class="text-sm font-bold text-gray-500 uppercase mb-2">Curso actual</h3><div id="course-current" class="mb-6"></div>
-                <h3 class="text-sm font-bold text-gray-500 uppercase mb-2">Consultar curso anterior</h3><div id="course-previous" class="space-y-3 mb-6"></div>
+                <div id="course-previous-section" class="hidden"><h3 class="text-sm font-bold text-gray-500 uppercase mb-2">Consultar curso anterior</h3><div id="course-previous" class="space-y-3 mb-6"></div></div>
                 <button type="button" onclick="openNewCourseForm()" class="w-full bg-green-600 text-white px-4 py-3 rounded shadow hover:bg-green-700 font-medium"><i class="fas fa-plus mr-2"></i>Nuevo curso</button></div>
                 <div id="nc-pane" class="hidden bg-white rounded-lg border border-gray-200 p-6 space-y-4"><h3 class="text-lg font-bold text-gray-800">Nuevo curso</h3><p id="nc-info" class="text-xs text-gray-500"></p>
                 <label class="block text-sm font-medium text-gray-700">Nombre<input type="text" id="nc-name" class="mt-1 block w-full border rounded px-3 py-2 text-sm"></label>
