@@ -1098,15 +1098,19 @@
                         </div>
                     </div>
 
-                    <div class="space-y-8">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 flex items-center"><i class="fas fa-music text-indigo-500 mr-2"></i>Obras <span id="rep-count-works" class="ml-2 bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">0</span></h3>
-                            <div id="rep-works"></div>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-500 uppercase mb-3 flex items-center"><i class="fas fa-book text-green-500 mr-2"></i>Libros y métodos <span id="rep-count-books" class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">0</span></h3>
-                            <div id="rep-books"></div>
-                        </div>
+                    <div class="mb-8 flex flex-wrap gap-3" role="tablist" aria-label="Categorías del repertorio">
+                        <button type="button" id="rep-category-works" role="tab" aria-controls="rep-works-panel" aria-selected="true" onclick="setRepCategory('works')" class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                            <i class="fas fa-music text-indigo-500" aria-hidden="true"></i><span>Obras</span><span id="rep-count-works" class="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button type="button" id="rep-category-books" role="tab" aria-controls="rep-books-panel" aria-selected="false" onclick="setRepCategory('books')" class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                            <i class="fas fa-book text-green-500" aria-hidden="true"></i><span>Libros y métodos</span><span id="rep-count-books" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                    </div>
+                    <div id="rep-works-panel" role="tabpanel" aria-labelledby="rep-category-works" class="pt-4">
+                        <div id="rep-works"></div>
+                    </div>
+                    <div id="rep-books-panel" role="tabpanel" aria-labelledby="rep-category-books" class="hidden pt-4">
+                        <div id="rep-books"></div>
                     </div>
                 </section>
 
@@ -1874,6 +1878,10 @@
                 </div>
                 
                 <div id="rep-obra-fields" class="space-y-3">
+                    <div>
+                        <label for="rep-arranger" class="block text-sm font-medium text-gray-700">Arreglista:</label>
+                        <input type="text" id="rep-arranger" class="mt-1 block w-full border rounded px-3 py-2 text-sm" autocomplete="off">
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tonalidad</label>
@@ -2386,7 +2394,7 @@
                 const o = { type: r.type === 'libro' ? 'libro' : 'obra', title: r.title, author: r.author || '' };
                 if (o.type === 'libro') { if (r.pages) o.pages = r.pages; o.contents = (r.contents || []).map(c => ({ title: c.title, pages: c.pages })); }
                 else {
-                    ['tonality', 'measures', 'difficulty'].forEach(k => { if (r[k]) o[k] = r[k]; });
+                    ['arranger', 'tonality', 'measures', 'difficulty'].forEach(k => { if (r[k]) o[k] = r[k]; });
                     const sections = readWorkSections(r.sections);
                     if (sections.length) o.sections = sections;
                 }
@@ -2405,12 +2413,12 @@
             const title = String(x.title ?? '').trim();
             if (!title) return null;
             const isBook = x.type === 'libro';
-            const item = { type: isBook ? 'libro' : 'obra', title, author: String(x.author ?? '').trim(), tonality: '', measures: '', sections: [], difficulty: '', pages: '', contents: [] };
+            const item = { type: isBook ? 'libro' : 'obra', title, author: String(x.author ?? '').trim(), arranger: '', tonality: '', measures: '', sections: [], difficulty: '', pages: '', contents: [] };
             if (isBook) {
                 item.pages = String(x.pages ?? '').trim();
                 item.contents = (Array.isArray(x.contents) ? x.contents : []).map(c => ({ title: String(c && c.title || '').trim(), pages: normPages(c && c.pages) })).filter(c => c.title);
             } else {
-                ['tonality', 'measures'].forEach(k => { item[k] = String(x[k] ?? '').trim(); });
+                ['arranger', 'tonality', 'measures'].forEach(k => { item[k] = String(x[k] ?? '').trim(); });
                 item.sections = readWorkSections(x.sections);
                 item.difficulty = [1, 2, 3, 4, 5].includes(Number(x.difficulty)) ? Number(x.difficulty) : '';
             }
@@ -2441,7 +2449,7 @@
                     appState.repertoire.push(r); index.set(repKey(r), r); res.added++; return;
                 }
                 let changed = false;
-                ['tonality', 'measures', 'pages', 'difficulty'].forEach(k => { if (x[k] && String(x[k]) !== String(cur[k] || '')) { cur[k] = x[k]; changed = true; } });
+                ['arranger', 'tonality', 'measures', 'pages', 'difficulty'].forEach(k => { if (x[k] && String(x[k]) !== String(cur[k] || '')) { cur[k] = x[k]; changed = true; } });
                 if (x.sections.length) {
                     const merged = mergeSections(cur.sections, x.sections);
                     if (JSON.stringify(merged) !== JSON.stringify(readWorkSections(cur.sections))) {
@@ -3273,6 +3281,32 @@
             const t = document.getElementById('nav-toggle'); if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
         }
         function toggleNav() { if (isMobile()) setNav(!document.body.classList.contains('nav-open')); }
+
+        // Gestos del cajón lateral: abrir desde el borde izquierdo y cerrar hacia la izquierda.
+        function setupNavSwipe() {
+            let gesture = null;
+            document.addEventListener('touchstart', (event) => {
+                if (!isMobile() || event.touches.length !== 1) { gesture = null; return; }
+                if (document.querySelector('[id^="modal-"]:not(.hidden)')) { gesture = null; return; }
+                const touch = event.touches[0];
+                const opened = document.body.classList.contains('nav-open');
+                const insideNav = !!event.target.closest('#side-nav');
+                if ((!opened && touch.clientX <= 32) || (opened && insideNav)) {
+                    gesture = { x: touch.clientX, y: touch.clientY, opened };
+                } else gesture = null;
+            }, { passive: true });
+            document.addEventListener('touchend', (event) => {
+                if (!gesture || !isMobile() || !event.changedTouches.length) { gesture = null; return; }
+                const dx = event.changedTouches[0].clientX - gesture.x;
+                const dy = event.changedTouches[0].clientY - gesture.y;
+                if (Math.abs(dx) >= 65 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+                    if (!gesture.opened && dx > 0) setNav(true);
+                    else if (gesture.opened && dx < 0) setNav(false);
+                }
+                gesture = null;
+            }, { passive: true });
+            document.addEventListener('touchcancel', () => { gesture = null; }, { passive: true });
+        }
 
         function navigate(viewName) {
             setNav(false);
@@ -5921,6 +5955,7 @@
                 type: type,
                 title: document.getElementById('rep-title').value,
                 author: document.getElementById('rep-author').value,
+                arranger: type === 'obra' ? document.getElementById('rep-arranger').value.trim() : '',
                 tonality: type === 'obra' ? document.getElementById('rep-tonality').value : '',
                 measures: type === 'obra' ? document.getElementById('rep-measures').value : '',
                 sections,
@@ -5993,7 +6028,8 @@
             const sections = isBook ? '' : workSectionsHtml(r);
             const details = isBook
                 ? (r.pages ? `<p><span class="text-gray-500">Páginas:</span> ${esc(r.pages)}</p>` : '') + repContentBtn(r, 'mt-3 w-full text-sm px-3 py-2')
-                : `${r.tonality ? `<p><span class="text-gray-500">Tonalidad:</span> ${esc(r.tonality)}</p>` : ''}
+                : `${r.arranger ? `<p><span class="text-gray-500">Arreglista:</span> ${esc(r.arranger)}</p>` : ''}
+                   ${r.tonality ? `<p><span class="text-gray-500">Tonalidad:</span> ${esc(r.tonality)}</p>` : ''}
                    ${r.measures ? `<p><span class="text-gray-500">Compases:</span> ${esc(r.measures)}</p>` : ''}
                    ${sections ? `<div class="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">${sections}</div>` : ''}`;
             return `<div class="bg-white rounded-lg shadow border border-gray-200 p-4 relative pt-8 mt-3">
@@ -6056,6 +6092,7 @@
                     </div>${actions}</div>`;
             }
             const rows = [
+                r.arranger ? `<div><span class="text-gray-400">Arreglista:</span> ${esc(r.arranger)}</div>` : '',
                 r.tonality ? `<div><span class="text-gray-400">Tonalidad:</span> ${esc(r.tonality)}</div>` : '',
                 r.measures ? `<div><span class="text-gray-400">Compases:</span> ${esc(r.measures)}</div>` : '',
                 workSectionsHtml(r)
@@ -6075,12 +6112,25 @@
                 </div>${actions}</div>`;
         }
 
+        function setRepCategory(category) {
+            appState.repCategory = category === 'books' ? 'books' : 'works';
+            renderRepertoire();
+        }
+
         function renderRepertoire() {
             let mode = appState.repView;
             if (!mode) { try { mode = localStorage.getItem('maestro_rep_view'); } catch (_) {} mode = mode === 'list' ? 'list' : 'grid'; appState.repView = mode; }
             const on = 'px-3 py-2 text-sm transition bg-blue-600 text-white', off = 'px-3 py-2 text-sm transition text-gray-600 hover:bg-gray-50';
             document.getElementById('rep-view-grid').className = mode === 'grid' ? on : off;
             document.getElementById('rep-view-list').className = (mode === 'list' ? on : off) + ' border-l border-gray-300';
+            const category = appState.repCategory === 'books' ? 'books' : 'works';
+            ['works', 'books'].forEach(key => {
+                const active = key === category;
+                const tab = document.getElementById('rep-category-' + key);
+                tab.setAttribute('aria-selected', String(active));
+                tab.className = 'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ' + (active ? 'bg-blue-50 text-gray-900 border border-blue-400 shadow-sm' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50');
+                document.getElementById('rep-' + key + '-panel').classList.toggle('hidden', !active);
+            });
             const search = document.getElementById('search-rep').value.toLowerCase();
             const filtered = appState.repertoire.filter(r =>
                 (r.title || '').toLowerCase().includes(search) ||
@@ -6109,6 +6159,7 @@
 
             document.getElementById('rep-title').value = r.title;
             document.getElementById('rep-author').value = r.author;
+            document.getElementById('rep-arranger').value = r.arranger || '';
             document.getElementById('rep-tonality').value = r.tonality || '';
             document.getElementById('rep-measures').value = r.measures || '';
             setSectionRows(r.sections);
@@ -6358,6 +6409,7 @@
 
         function init() {
             setupExtras();
+            setupNavSwipe();
             applyReadOnlyGuards();
             loadUserData();
             // Si hay un curso cuyas fechas incluyen hoy (inicio y fin incluidos), se entra directamente en él
@@ -6366,6 +6418,8 @@
                 .filter(c => c.settings.courseStart && c.settings.courseEnd && today >= c.settings.courseStart && today <= c.settings.courseEnd)
                 .sort((a, b) => b.settings.courseStart.localeCompare(a.settings.courseStart))[0];
             if (current) openCourse(current.id, false); else showCourseScreen();
+            // Mostrar el menú inicialmente en móviles y tablets para descubrir la navegación.
+            if (isMobile()) setNav(true);
             setInterval(updateTimeAndCheckAlerts, 10000);
         }
 
